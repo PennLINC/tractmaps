@@ -1,0 +1,4 @@
+# Configuration file for neurosynth data preparation
+
+# Email address for downloading abstracts from neurosynth
+email_address: 'joelle.bagautdinova@pennmedicine.upenn.edu'
