@@ -122,7 +122,7 @@ print(f"Saved: {output_dir}/cortical_similarity_matrix.svg")
 # --- Create cortical similarity colorbar ---
 # ------------------------------------------------------------------------------------------------
 
-fig_cbar, ax_cbar = plt.subplots(figsize=(8, 0.6), dpi=300)
+fig_cbar, ax_cbar = plt.subplots(figsize=(5, 0.4), dpi=300)
 sm = plt.cm.ScalarMappable(cmap=cool_warm_cmap)
 sm.set_clim(-1, 1)
 sm.set_array([])
@@ -139,7 +139,7 @@ plt.close()
 print(f"Saved: {out_cbar}")
 
 # ------------------------------------------------------------------------------------------------
-# --- Plot tract subsetting examples ---
+# --- Create upper triangle matrix for just the connected regions of two example tracts ---
 # ------------------------------------------------------------------------------------------------
 
 # Connectivity threshold
@@ -155,58 +155,7 @@ for tract in tracts_for_maps:
     connected = (tracts_df[tract].values >= conn_thresh)
     print(f"Number of regions connected to {tract}: {np.sum(connected)}")
 
-    # Build 2D subset mask for pairs where both endpoints are connected (and in the upper triangle)
-    ii, jj = np.meshgrid(np.arange(n_regions), np.arange(n_regions), indexing='ij')
-    subset_mask = upper_mask & (connected[ii] & connected[jj])
-
-    plt.figure(figsize=(5.0, 5.0), dpi=300)
-    ax = plt.gca()
-
-    # Base layer: all upper-triangle cells, low alpha
-    sns.heatmap(
-        cortical_similarity,
-        mask=lower_mask,
-        cmap=cool_warm_cmap,
-        vmin=-1, vmax=1,
-        square=True,
-        xticklabels=False, yticklabels=False,
-        cbar=False,
-        linewidths=0,
-        linecolor=None,
-        ax=ax,
-    )
-    # Set low alpha for the base pcolormesh
-    if ax.collections:
-        ax.collections[-1].set_alpha(0.18)
-
-    # Overlay layer: only tract-connected pairs in upper triangle, full alpha
-    overlay_mask = ~subset_mask  # mask True = hide; so hide all not in subset
-    sns.heatmap(
-        cortical_similarity,
-        mask=overlay_mask,
-        cmap=cool_warm_cmap,
-        vmin=-1, vmax=1,
-        square=True,
-        xticklabels=False, yticklabels=False,
-        cbar=False,
-        linewidths=0,
-        linecolor=None,
-        ax=ax,
-    )
-    # Ensure overlay fully opaque
-    if ax.collections:
-        ax.collections[-1].set_alpha(1.0)
-
-    plt.tight_layout()
-    out_path = f"{output_dir}/tract_subsetting_{tract}.svg"
-    plt.savefig(out_path, bbox_inches='tight', dpi=300)
-    plt.close()
-    print(f"Saved: {out_path}")
-
-    # ------------------------------------------------------------------------------------------------
-    # Create upper triangle matrix for just the connected regions
-    # ------------------------------------------------------------------------------------------------
-    
+   
     # Get indices of connected regions
     connected_indices = np.where(connected)[0]
     n_connected = len(connected_indices)
