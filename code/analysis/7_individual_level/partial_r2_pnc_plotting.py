@@ -221,6 +221,45 @@ def significance_testing(gam_results, tract_properties, output_dir, significance
     return results_csv_path
 
 # ------------------------------------------------------------------------------------------------
+# --- Print Partial R² Results ---
+# ------------------------------------------------------------------------------------------------
+print("Summary of Partial R² Results:\n")
+
+# Print results for Age and Executive Efficiency
+for measure_name in ['Age', 'Executive Efficiency']:
+    if measure_name in gam_results:
+        df = gam_results[measure_name]
+        
+        # Get number of significant tracts based on FDR-corrected p-values
+        significant_tracts = df[df['anovaPvaluefdr'] < 0.05]
+        n_significant = len(significant_tracts)
+        n_total = len(df)
+        pct_significant = (n_significant / n_total) * 100
+        
+        # Get range of partial R² in significant tracts
+        if n_significant > 0:
+            min_r2 = significant_tracts['partialR2'].min()
+            max_r2 = significant_tracts['partialR2'].max()
+            r2_range_str = f"[{min_r2:.3f}, {max_r2:.3f}]"
+            
+            # Get percentage of positive partial R² values among significant tracts (to know how many tracts have positive associations with age or executive efficiency)
+            n_positive = (significant_tracts['partialR2'] > 0).sum()
+            pct_positive = (n_positive / n_significant) * 100
+        else:
+            r2_range_str = "N/A (no significant tracts)"
+            pct_positive = np.nan
+        
+        print(f"\n{measure_name}:")
+        print(f"  Total tracts: {n_total}")
+        print(f"  Significant tracts (FDR < 0.05): {n_significant} ({pct_significant:.1f}%)")
+        print(f"  Partial R² range (significant tracts): {r2_range_str}")
+        if n_significant > 0:
+            print(f"  Positive partial R² (significant tracts): {n_positive}/{n_significant} ({pct_positive:.1f}%)")
+    else:
+        print(f"\n{measure_name}: No data available")
+
+
+# ------------------------------------------------------------------------------------------------
 # --- Plot correlations between partial R² and tract metric values ---
 # ------------------------------------------------------------------------------------------------
 

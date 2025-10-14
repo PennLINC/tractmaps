@@ -8,7 +8,7 @@ warnings.filterwarnings('ignore')
 import os
 import pandas as pd
 import sys
-sys.path.append('/Users/joelleba/PennLINC/tractmaps/code')
+sys.path.append('/Users/joelleba/PennLINC/tractmaps/code_pennlinc_repo/code')
 from data_prep import tm_parcellate
 from utils import tm_utils
 from neuromaps.datasets import fetch_annotation

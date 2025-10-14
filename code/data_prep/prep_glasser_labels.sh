@@ -26,7 +26,7 @@ wb_command -file-information HCP_MMP_L.label.gii | grep -A 10 "Label table"
 
 # remap the the region indices to be consistent with the rest of the data (left: 1-180, right: 181-360) using prep_gifti_labels.sh
 echo "Remapping region indices to be consistent with the rest of the data..."
-root='/Users/joelleba/PennLINC/tractmaps/code/data_prep/'
+root='/Users/joelleba/PennLINC/tractmaps/code_pennlinc_repo/code/data_prep/'
 bash $root/remap_labels.sh HCP_MMP_L.label.gii
 bash $root/remap_labels.sh HCP_MMP_R.label.gii
 
