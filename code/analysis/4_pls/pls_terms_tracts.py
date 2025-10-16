@@ -163,7 +163,7 @@ def spinCV(iSpin, orig_x_wei, orig_y_wei, spins, X, Y, coords, trainpct):
     '''
     Perform spin-based cross-validation for PLS analysis.
     
-    This function computes the mean test correlation for a specific spin iteration,
+    This function computes the median test correlation for a specific spin iteration,
     using distance-based cross-validation. Each node is used to create training and
     test datasets based on proximity, and a Partial Least Squares (PLS) model is trained
     to evaluate the correlation between test set scores for X and Y.
@@ -190,7 +190,7 @@ def spinCV(iSpin, orig_x_wei, orig_y_wei, spins, X, Y, coords, trainpct):
     Returns
     -------
     testnull : (spins.shape[1], ) array
-        Mean test set correlation for each spin permutation.
+        Median test set correlation for each spin permutation.
     error_list : list of tuples
         List of spin and node indices where the PLS analysis encountered errors.
     '''
@@ -243,8 +243,8 @@ def spinCV(iSpin, orig_x_wei, orig_y_wei, spins, X, Y, coords, trainpct):
         t[node], _ = spearmanr(Xtest @ realigned_null_x_wei[1][:, lv],
                                            Ytest @ realigned_null_y_wei[1][:, lv])
 
-    # get the mean test correlation for this spin
-    testnull[iSpin] = np.mean(t)
+    # get the median test correlation for this spin (across all train-test splits from each node)
+    testnull[iSpin] = np.median(t)
 
     return testnull, error_list
 
@@ -275,7 +275,7 @@ def pls_cv_distance_dependent_par(X, Y, coords, trainpct=0.75, lv=0,
     lv : int
         Index of latent variable to cross-validate. Default = 0.
     testnull : Boolean
-        Whether to calculate and return null mean test-set correlation.
+        Whether to calculate and return null median test-set correlation.
     spins : (n, nspins) array_like
         Spin-test permutations. Required if testnull=True.
     nspins : int
@@ -287,7 +287,7 @@ def pls_cv_distance_dependent_par(X, Y, coords, trainpct=0.75, lv=0,
     test : (nsplit, ) array
         Test set correlation between X and Y scores.
     testnullres: (nspins, ) array
-        Null correlations between X and Y scores.
+        Null median test-set correlations between X and Y scores.
         
     """
     
@@ -338,12 +338,12 @@ def pls_cv_distance_dependent_par(X, Y, coords, trainpct=0.75, lv=0,
         # append the X and Y scores for the test set to the list
         test_scores.append((test_score_x, test_score_y))
 
-    # if testnull=True, get distribution of mean null test-set correlations.
+    # if testnull=True, get distribution of median null test-set correlations.
     if testnull:
         print('Running null test-set correlations, will take time')
         results = Parallel(n_jobs = 6)(delayed(spinCV)(i, orig_x_wei, orig_y_wei, spins, X, Y, coords, trainpct) for i in range(nspins))
         testnullres = np.array([results[i][0] for i in range(nspins)]) # first get testnullres matrix
-        testnullres = np.array([testnullres[i][i] for i in range(nspins)]) # tract diagonal containing mean correlations
+        testnullres = np.array([testnullres[i][i] for i in range(nspins)]) # tract diagonal containing median correlations
         error_lists = [results[i][1] for i in range(nspins)]
         error_list = [item for sublist in error_lists for item in sublist] # list of spin & node combinations resultng in PLS errors
     else:

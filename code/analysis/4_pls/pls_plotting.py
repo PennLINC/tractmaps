@@ -19,7 +19,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 from utils import tm_utils
 import pyls
-from scipy.stats import zscore
+from scipy.stats import median_test, zscore
 import matplotlib.pyplot as plt
 plt.switch_backend('Agg')
 import scipy
@@ -107,21 +107,32 @@ mask[pls_result.permres.pvals[:10] < 0.05] = 1
 
 # plot variance explained
 plt.ion()
-plt.figure(figsize=(4, 4))
-plt.boxplot(x = cv_spins.T * 100, positions = range(len(cv)), # a box is drawn for each column of x
+fig, ax = plt.subplots(figsize=(4, 4))
+ax.boxplot(x = cv_spins.T * 100, positions = range(len(cv)), # a box is drawn for each column of x
                 boxprops = dict(alpha = 0.5, color = 'gray'), whiskerprops = dict(color = 'grey'), medianprops=dict(color='gray'),
                 showcaps = False, showfliers = False, zorder = 1)
 # scatter plot of variance explained where significant LVs are colored using mask, non-significant ones are grey
 for i in range(len(cv)):
     color = 'palevioletred' if mask[i] == 1 else 'darkgrey'
-    plt.scatter(i, cv[i] * 100, s = 40, color=color, zorder=2)
+    ax.scatter(i, cv[i] * 100, s = 40, color=color, zorder=2)
 
-plt.xlabel('latent variable')
-plt.ylabel('covariance explained (%)')
+ax.set_xlabel('latent variable')
+ax.set_ylabel('covariance explained (%)')
 sns.despine(trim = False)
-plt.gca().set_xticks([])
-plt.yticks(np.arange(0, 50, 10))
-plt.yticks(fontsize=16)
+ax.set_xticks([])
+ax.set_yticks(np.arange(0, 50, 10))
+ax.tick_params(labelsize=16)
+
+# Add legend
+legend_elements = [
+    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='palevioletred', markersize=10, label='p < 0.05'),
+    plt.Line2D([0], [0], marker='s', color='w', markerfacecolor='white', markeredgecolor='gray', 
+               markersize=12, markeredgewidth=1, label='spin null')
+]
+ax.legend(handles=legend_elements, loc='upper right', frameon=True, 
+         facecolor='white', edgecolor='grey', framealpha=0.5,
+         bbox_to_anchor=(1, 1), borderpad=0.5, handletextpad=0.1, handlelength=1.0)
+
 plt.tight_layout()
 plt.savefig(f'{output_dir}/scatter_pls_var_exp.svg')
 
@@ -131,14 +142,17 @@ plt.savefig(f'{output_dir}/scatter_pls_var_exp.svg')
 # scatter plot of X and Y scores from the median test set ---
 # ------------------------------------------------------------------------------------------------
 
-# compute pvalue
-p = (1 + np.sum(testnullres > np.mean(test))) / (1 + len(testnullres))
+# compute median test score correlation
+median_test_score_correlation = np.median(test)
 
-# print mean test score correlation
+# compute pvalue
+p = (1 + np.sum(testnullres > median_test_score_correlation)) / (1 + len(testnullres))
+
+# print median test score correlation
 print(f'PLS \n \
-Mean train score correlation = {round(np.mean(train), 2)} \n \
-Mean test score correlation = {round(np.mean(test), 2)} \n \
-Mean null test score correlation = {round(np.mean(testnullres), 2)} \n \
+Median train score correlation = {round(np.median(train), 2)} \n \
+Median test score correlation = {round(median_test_score_correlation, 2)} \n \
+Median null test score correlation = {round(np.median(testnullres), 2)} \n \
 p = {round(p, 4)} \n')
 
 # plot train and test score correlation distribution
@@ -147,9 +161,6 @@ boxplot = sns.boxplot(data = [train, test, testnullres], ax = ax, palette = ['pa
                       width = 0.6, showcaps = False, showfliers = False)
 sns.despine()
 ax.set_xticklabels(['train', 'test', 'null'])
-ax.text(0.1, 0.1, f'r = {round(np.mean(test), 2)}\np = {round(p, 4)}', transform=ax.transAxes,
-         bbox=dict(facecolor='white', alpha=0.5, edgecolor='grey', boxstyle='round,pad=0.8'))
-
 ax.set_ylabel('score correlation', fontsize=18)
 plt.setp(ax.get_xticklabels(), fontsize=18)
 plt.setp(ax.get_yticklabels(), fontsize=16)
@@ -171,14 +182,13 @@ plt.ion()
 plt.figure(figsize=(5, 4))
 sns.regplot(x=median_x_scores, y=median_y_scores, scatter=False, color='darkgrey')
 plt.scatter(median_x_scores, median_y_scores, alpha=0.8, color='#636BD8', linewidths=0)
-r = scipy.stats.spearmanr(median_x_scores, median_y_scores)
 sns.despine()
 plt.xlabel('median test cog. term scores', fontsize=18) 
 plt.ylabel('median test tract scores', fontsize=18)
 plt.xticks(fontsize=18)
 plt.yticks(fontsize=18)
-plt.text(0.05, 0.95, f'r = {round(r.statistic, 3)}', ha='left', va='top', transform=plt.gca().transAxes,
-         bbox=dict(facecolor='white', alpha=0.5, edgecolor='grey', boxstyle='round,pad=0.8'))
+plt.text(0.05, 0.95, f'r = {round(median_test_score_correlation, 3)}\np = {round(p, 4)}', ha='left', va='top', transform=plt.gca().transAxes,
+         bbox=dict(facecolor='white', alpha=0.5, edgecolor='grey', boxstyle='round,pad=0.5'))
 plt.tight_layout()
 plt.savefig(f'{output_dir}/scatter_scores.svg')
 plt.show() 
