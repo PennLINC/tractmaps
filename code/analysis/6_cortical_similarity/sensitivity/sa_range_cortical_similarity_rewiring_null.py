@@ -20,11 +20,12 @@ import pickle
 from scipy.stats import pearsonr, spearmanr, kendalltau
 import contextlib
 import io
-
-sys.path.append('/Users/joelleba/PennLINC/tractmaps/code')
+from pathlib import Path
+project_root = Path(__file__).parent.parent.parent.parent
+sys.path.append(str(project_root))
 from data_prep.prep_sa_axis import calculate_tract_sa_ranges
 from utils.matrix_to_tracts import extract_tract_means_from_matrix
-from data_prep.network_rewiring_nulls import plot_correlation_null_distribution
+from data_prep.tract_rewiring_nulls import plot_correlation_null_distribution
 
 # ------------------------------------------------------------------------------------------------
 # --- Set up inputs and load data ---
@@ -32,7 +33,7 @@ from data_prep.network_rewiring_nulls import plot_correlation_null_distribution
 root = '/Users/joelleba/PennLINC/tractmaps'
 data_root = f'{root}/data/derivatives/'
 tracts_dir = f'{root}/data/derivatives/tracts'
-nulls_dir = f'{data_root}/nulls/degree_preserving_nulls'
+nulls_dir = f'{data_root}/nulls/tract_rewiring_nulls'
 
 # Define tract-to-region connection threshold
 tract_threshold = 0.5
@@ -56,7 +57,7 @@ if os.path.exists(null_pickle_path):
         null_datasets = pickle.load(f)
     print(f"Loaded {len(null_datasets)} null datasets from: {null_pickle_path}")
 else:
-    raise FileNotFoundError(f"Null datasets not found at: {null_pickle_path}. Please run region_label_nulls.py first.")
+    raise FileNotFoundError(f"Null datasets not found at: {null_pickle_path}. Please run tract_rewiring_nulls.py first.")
 
 # Create results directory
 results_dir = f'{root}/results/cortical_similarity/sensitivity'

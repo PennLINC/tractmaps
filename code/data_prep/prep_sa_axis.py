@@ -10,7 +10,9 @@ import os
 import pandas as pd
 import numpy as np
 import sys
-sys.path.append('/Users/joelleba/PennLINC/tractmaps/code') # Add the code directory to path
+from pathlib import Path
+project_root = Path(__file__).parent.parent
+sys.path.append(str(project_root))
 from utils import tm_utils
 from neuromaps.datasets import fetch_annotation
 from data_prep import tm_parcellate

@@ -23,20 +23,21 @@ import contextlib
 import io
 import tempfile
 import importlib.util
-
-sys.path.append('/Users/joelleba/PennLINC/tractmaps/code')
+from pathlib import Path
+project_root = Path(__file__).parent.parent.parent.parent
+sys.path.append(str(project_root))
 from data_prep.prep_sa_axis import calculate_tract_sa_ranges
 from data_prep.tract_rewiring_nulls import plot_correlation_null_distribution
 
 # Import functions from numbered directories using importlib
 gini_spec = importlib.util.spec_from_file_location("tract_gini_coefficients", 
-    "/Users/joelleba/PennLINC/tractmaps/code/analysis/4_functional_diversity/tract_gini_coefficients.py")
+    "/Users/joelleba/PennLINC/tractmaps/code/analysis/5_functional_diversity/tract_gini_coefficients.py")
 gini_module = importlib.util.module_from_spec(gini_spec)
 gini_spec.loader.exec_module(gini_module)
 calculate_tract_gini_coefficients = gini_module.calculate_tract_gini_coefficients
 
 term_contrib_spec = importlib.util.spec_from_file_location("tract_term_contributions", 
-    "/Users/joelleba/PennLINC/tractmaps/code/analysis/2_functional_decoding/tract_term_contributions.py")
+    "/Users/joelleba/PennLINC/tractmaps/code/analysis/4_functional_decoding/tract_term_contributions.py")
 term_contrib_module = importlib.util.module_from_spec(term_contrib_spec)
 term_contrib_spec.loader.exec_module(term_contrib_module)
 calculate_tract_term_contributions = term_contrib_module.calculate_tract_term_contributions
@@ -47,7 +48,7 @@ calculate_tract_term_contributions = term_contrib_module.calculate_tract_term_co
 root = '/Users/joelleba/PennLINC/tractmaps'
 data_root = f'{root}/data/derivatives/'
 tracts_dir = f'{root}/data/derivatives/tracts'
-nulls_dir = f'{data_root}/nulls/degree_preserving_nulls'
+nulls_dir = f'{data_root}/nulls/tract_rewiring_nulls'
 
 # Define tract-to-region connection threshold
 tract_threshold = 0.5
@@ -71,7 +72,7 @@ if os.path.exists(null_pickle_path):
         null_datasets = pickle.load(f)
     print(f"Loaded {len(null_datasets)} null datasets from: {null_pickle_path}")
 else:
-    raise FileNotFoundError(f"Null datasets not found at: {null_pickle_path}. Please run region_label_nulls.py first.")
+    raise FileNotFoundError(f"Null datasets not found at: {null_pickle_path}. Please run tract_rewiring_nulls.py first.")
 
 # Create results directory
 results_dir = f'{root}/results/tract_functional_diversity/sensitivity'

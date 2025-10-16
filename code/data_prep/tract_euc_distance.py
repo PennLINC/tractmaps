@@ -14,7 +14,9 @@ import sys
 from scipy.spatial.distance import squareform, pdist
 
 # Add utils to path for importing custom functions
-sys.path.append('/Users/joelleba/PennLINC/tractmaps/code')
+from pathlib import Path
+project_root = Path(__file__).parent.parent
+sys.path.append(str(project_root))
 from utils.matrix_to_tracts import extract_tract_means_from_matrix
 
 # ------------------------------------------------------------------------------------------------

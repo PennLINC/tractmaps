@@ -22,7 +22,9 @@ import matplotlib.pyplot as plt
 plt.switch_backend('Agg')
 import sys
 import pickle
-sys.path.append('/Users/joelleba/PennLINC/tractmaps/code')
+from pathlib import Path
+project_root = Path(__file__).parent.parent
+sys.path.append(str(project_root))
 from utils import tm_utils
 
 # ------------------------------------------------------------------------------------------------
@@ -41,10 +43,10 @@ n_nulls = 10000
 # Load tract data
 tract_connection_path = f'{tracts_dir}/tracts_probabilities/tracts_probabilities.csv'
 tractdata = pd.read_csv(tract_connection_path)
-print(f"Loaded tract connection data for {len(tractdata)} regions, {len(tractdata.filter(regex='left|right').columns)} tracts")
+print(f"Loaded tract connection data for {len(tractdata)} regions, {len(tractdata.filter(regex='left|right').columns)} tracts") # count the number of tracts
 
 # Create output directories
-nulls_dir = f'{data_root}/nulls/degree_preserving_nulls'
+nulls_dir = f'{data_root}/nulls/tract_rewiring_nulls'
 if not os.path.exists(nulls_dir):
     os.makedirs(nulls_dir)
     print(f"Created output directory: {nulls_dir}")
@@ -93,7 +95,7 @@ def generate_tract_rewiring_nulls(tractdata, n_nulls=10000, tract_threshold=0.5,
     
     # Set output directory
     if output_dir is None:
-        output_dir = f'{data_root}/nulls/degree_preserving_nulls'
+        output_dir = f'{data_root}/nulls/tract_rewiring_nulls'
     
     # Check if null datasets already exist
     null_pickle_path = f'{output_dir}/null_tractdata_{n_nulls}nulls.pkl'
@@ -121,7 +123,7 @@ def generate_tract_rewiring_nulls(tractdata, n_nulls=10000, tract_threshold=0.5,
     
     # Create progress bar if requested
     if progress_bar:
-        iterator = tqdm(range(n_nulls), desc="Generating degree-preserving nulls")
+        iterator = tqdm(range(n_nulls), desc="Generating tract rewiring nulls")
     else:
         iterator = range(n_nulls)
     

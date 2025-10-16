@@ -30,9 +30,10 @@ from nimare.io import convert_neurosynth_to_dataset
 from nimare.meta.cbma.mkda import MKDAChi2
 import sys
 import yaml
-sys.path.append('/Users/joelleba/PennLINC/tractmaps/code')
+from pathlib import Path
+project_root = Path(__file__).parent.parent
+sys.path.append(str(project_root))
 from data_prep import tm_parcellate
-from utils import tm_utils
 
 # ------------------------------------------------------------------------------------------------ 
 # --- Define inputs --- #
