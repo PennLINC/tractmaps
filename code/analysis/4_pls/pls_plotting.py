@@ -19,7 +19,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 from utils import tm_utils
 import pyls
-from scipy.stats import median_test, zscore
+from scipy.stats import zscore
 import matplotlib.pyplot as plt
 plt.switch_backend('Agg')
 import scipy
@@ -76,12 +76,7 @@ test = np.load(f'{results_dir}/pls_glasser360_test_corrs.npy')
 # ------------------------------------------------------------------------------------------------
 
 # NOTE: `pls_result.permres.permsingval comes from locally editing
-# pyls.base.py run_pls(self, X, Y) to return the `d_perm` variable.
-# Also note that for this edit to work, the structures.PLSPermResult
-# object needs to be updated to allow the `d_perm` to be returned.
-# Code located at: 
-# /opt/anaconda3/envs/tractmaps/lib/python3.8/site-packages/pyls-0.0.1-py3.8.egg/pyls/base.py
-# /opt/anaconda3/envs/tractmaps/lib/python3.8/site-packages/pyls-0.0.1-py3.8.egg/pyls/structures.py
+# pyls.base.py run_pls(self, X, Y) to return the `d_perm` variable. See detailed notes in pls_terms_tracts.py.
 
 cv = pls_result.singvals**2 / np.sum(pls_result.singvals**2)
 null_singvals = pls_result.permres.perm_singval

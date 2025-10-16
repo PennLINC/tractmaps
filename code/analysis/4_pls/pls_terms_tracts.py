@@ -118,6 +118,23 @@ print(f"nsdata shape: {nsdata.shape}")
 # --- Run PLS ---
 # ------------------------------------------------------------------------------------------------
 
+# NOTE: `pls_result.permres.permsingval comes from locally editing
+# pyls.base.py run_pls(self, X, Y) to return the `d_perm` variable. Specifically, this was added after line 370:
+# res['permres']['perm_singval'] = d_perm  # <--- added this line
+
+# Also note that for this edit to work, the structures.PLSPermResult object needs to be updated to allow the `d_perm` to be returned.
+# Specifically, add the following lines: 
+# Description added after line 292:
+#     perm_singval : (L, P) `numpy.ndarray`
+#        Singular values from each permutation (added for custom analysis)
+# Code edited at lines 296-298: 
+#     allowed = [
+#        'pvals', 'permsamples', 'perm_singval' # added the 'perm_singval' to the allowed list
+#   ]
+# Path to code files:
+# /opt/anaconda3/envs/tractmaps/lib/python3.8/site-packages/pyls-0.0.1-py3.8.egg/pyls/base.py
+# /opt/anaconda3/envs/tractmaps/lib/python3.8/site-packages/pyls-0.0.1-py3.8.egg/pyls/structures.py
+
 print('Running PLS...')
 
 X = zscore(nsdata).values  # cognitive terms (360 regions x 124 terms) - convert to numpy array
