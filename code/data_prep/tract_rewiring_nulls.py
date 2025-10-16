@@ -1,13 +1,13 @@
 # ------------------------------------------------------------------------------------------------
-# --- Degree-Preserving Nulls Generation ---
+# --- Tract Rewiring Null Generation ---
 # ------------------------------------------------------------------------------------------------
 
-# This script generates degree-preserving nulls for tract data. Specifically, the number of regions 
-# connected to each tract is preserved, but the regions connected to each tract are permuted within 
-# each hemisphere.
+# This script generates tract rewiring degree-preserving nulls for tract data. Specifically, 
+# the number of regions connected to each tract is preserved, but the regions connected to each  
+# tract are permuted within each hemisphere.
 
-# Inputs: tract data
-# Outputs: degree-preserving nulls pickle
+# Inputs: tract-to-region connection probabilities data
+# Outputs: tract rewiring nulls pickle
 # ------------------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------------------------
@@ -58,10 +58,10 @@ if not os.path.exists(plots_dir):
 # --- Core functions ---
 # ------------------------------------------------------------------------------------------------
 
-def generate_network_nulls(tractdata, n_nulls=10000, tract_threshold=0.5, 
+def generate_tract_rewiring_nulls(tractdata, n_nulls=10000, tract_threshold=0.5, 
                            random_state=None, progress_bar=True, output_dir=None):
     """
-    Generate and save degree-preserving nulls for tract data.
+    Generate and save tract rewiring degree-preserving nulls for tract data.
     
     This function creates null tract data where the *number* of regions connected to each tract
     remains the same as the original data, but the connected regions are permuted
@@ -394,7 +394,7 @@ def plot_correlation_null_distribution(empirical_correlation, null_correlations,
 
 if __name__ == "__main__":
     # Generate and save nulls
-    null_datasets = generate_network_nulls(tractdata, n_nulls=n_nulls, tract_threshold=tract_threshold, random_state=42)
+    null_datasets = generate_tract_rewiring_nulls(tractdata, n_nulls=n_nulls, tract_threshold=tract_threshold, random_state=42)
     
     # Example: Plot tracts with their nulls
     print("\nGenerating example plot...")
@@ -411,5 +411,5 @@ if __name__ == "__main__":
     else:
         print(f"Some tracts not found in data. Available tracts: {list(tractdata.filter(regex='left|right').columns[:5])}")
 
-    print("Degree-preserving null generation complete!")
+    print("Tract rewiring null generation complete!")
  
