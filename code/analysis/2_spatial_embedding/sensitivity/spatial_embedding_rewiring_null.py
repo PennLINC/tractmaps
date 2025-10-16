@@ -24,7 +24,7 @@ import io
 sys.path.append('/Users/joelleba/PennLINC/tractmaps/code')
 from data_prep.prep_sa_axis import calculate_tract_sa_ranges
 from utils.matrix_to_tracts import extract_tract_means_from_matrix
-from data_prep.network_rewiring_nulls import plot_correlation_null_distribution
+from data_prep.tract_rewiring_nulls import plot_correlation_null_distribution
 
 # ------------------------------------------------------------------------------------------------
 # --- Set up inputs and load data ---
