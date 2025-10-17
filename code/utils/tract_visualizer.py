@@ -603,7 +603,7 @@ class TractVisualizer:
                                      rgb_color_dict, output_name, grid_orientation, colorbar,
                                      has_single_color, has_values_column, values_column,
                                      has_color_column, color_column, full_dataset_values,
-                                     full_dataset_colors, keep_csv, keep_color_files, cleanup_renamed_files)
+                                     full_dataset_colors, keep_csv, keep_color_files, cleanup_renamed_files, view)
         elif tract_gradient_plot:
             self._visualize_tract_gradient_plot(tract_df, matched_tracts, color_scheme, final_values,
                                               rgb_color_dict, output_name, tract_name_column, tract_list,
@@ -1303,8 +1303,13 @@ class TractVisualizer:
         """
         Process each tract individually using numbered files for consistent ordering.
         
-        If grid_orientation is specified, creates a grid (lateral + medial) for each tract.
-        If grid_orientation is None, creates single view per tract using 'view' parameter.
+        If grid_orientation is specified with view parameter:
+            - Groups tracts by base name (e.g., AF_L and AF_R become one group)
+            - Creates one grid per group showing both hemispheres with the specified view
+        If grid_orientation is specified without view parameter:
+            - Creates a grid (lateral + medial) for each individual tract
+        If grid_orientation is None:
+            - Creates single view per tract using 'view' parameter
         """
         
         # Create numbered tract files even for iterative mode for consistency
@@ -1322,7 +1327,45 @@ class TractVisualizer:
                     if basename.endswith(f'_{tract}.trk.gz') or basename == f'{tract}.trk.gz':
                         tract_to_numbered_file[tract] = numbered_file
                         break
+            
+            # Check if we need to group tracts by base name (for showing both hemispheres together)
+            # This happens when grid_orientation is specified with a single view type
+            if grid_orientation is not None and view in ['lateral', 'medial']:
+                # Group tracts by base name (AF_L and AF_R -> AF)
+                tract_groups = {}
+                for tract in matched_tracts:
+                    base_name = tract.replace('_L', '').replace('_R', '')
+                    if base_name not in tract_groups:
+                        tract_groups[base_name] = []
+                    tract_groups[base_name].append(tract)
+                
+                # Process each group (create one image per group showing both hemispheres)
+                for group_idx, (base_name, group_tracts) in enumerate(tract_groups.items()):
+                    print(f"Processing tract group {group_idx+1}/{len(tract_groups)}: {base_name} ({len(group_tracts)} hemisphere(s))")
+                    
+                    # If group has both L and R, create a horizontal grid
+                    if len(group_tracts) == 2:
+                        self._create_hemisphere_pair_grid(
+                            group_tracts, base_name, tract_to_numbered_file, 
+                            color_scheme, values, converted_color_dict, output_name,
+                            view, grid_orientation, colorbar, has_single_color,
+                            has_values_column, values_column, has_color_column, color_column,
+                            full_dataset_values, full_dataset_colors, keep_csv, keep_color_files,
+                            matched_tracts
+                        )
+                    else:
+                        # Single hemisphere - process normally
+                        for i, tract in enumerate(group_tracts):
+                            self._process_single_tract_iterative(
+                                i, tract, matched_tracts, tract_to_numbered_file,
+                                color_scheme, values, converted_color_dict, output_name,
+                                view, grid_orientation, colorbar, has_single_color,
+                                has_values_column, values_column, has_color_column, color_column,
+                                full_dataset_values, full_dataset_colors, keep_csv, keep_color_files
+                            )
+                return  # Exit early - we've processed all tracts in groups
         
+            # Original iterative processing (one tract at a time)
             for i, tract in enumerate(matched_tracts):
                 print(f"Processing tract {i+1}/{len(matched_tracts)}: {tract}")
                 
@@ -1351,9 +1394,9 @@ class TractVisualizer:
                 
                 # Check if we need to create a grid (both lateral and medial views) or single view
                 if grid_orientation is not None:
-                    # Create grid for this tract - need both lateral and medial views
+                    # Create grid for this tract - may need both lateral and medial views or just one view type
                     final_image = self._create_iterative_tract_grid(tract, numbered_tract_file, color_file, 
-                                                    output_name, grid_orientation, keep_csv, keep_color_files)
+                                                    output_name, grid_orientation, keep_csv, keep_color_files, view)
                     
                     # Add colorbar if requested
                     if colorbar and final_image:
@@ -1392,9 +1435,11 @@ class TractVisualizer:
                              output_name: str, grid_orientation: str, colorbar: bool,
                              has_single_color: bool, has_values_column: bool, values_column: Optional[str],
                              has_color_column: bool, color_column: Optional[str], full_dataset_values: Optional[List[float]],
-                             full_dataset_colors: Optional[Dict[str, tuple]], keep_csv: bool, keep_color_files: bool, cleanup_renamed_files: bool) -> None:
+                             full_dataset_colors: Optional[Dict[str, tuple]], keep_csv: bool, keep_color_files: bool, cleanup_renamed_files: bool,
+                             view: str = 'lateral') -> None:
         """Process all tracts together, creating a grid with hemisphere views.
-        Creates 2x2 grid for both hemispheres, or 1x2/2x1 grid for single hemisphere.
+        Creates 2x2 grid for both hemispheres (if grid_orientation and both views needed), 
+        or 1x2 grid for single view type (if view specified), or 1x2/2x1 grid for single hemisphere.
         Uses numbered tract files to ensure correct loading order."""
         
         # Create numbered tract files to ensure correct loading order
@@ -1427,7 +1472,15 @@ class TractVisualizer:
         
             print(f"Separated tracts - Left: {len(left_tracts)}, Right: {len(right_tracts)}")
             
-            # Create all 4 views for 2x2 grid
+            # Determine if we need both lateral and medial views or just one view type
+            # If grid_orientation is None, we create both views (original behavior)
+            # If view parameter is specified along with grid_orientation, respect the view setting
+            views_to_create = ['lateral', 'medial'] if grid_orientation is None else [view]
+            
+            if grid_orientation is not None and view in ['lateral', 'medial']:
+                print(f"Creating single view type ({view}) with grid_orientation={grid_orientation}")
+            
+            # Create views for each hemisphere
             hemisphere_images = {}
             
             if left_tracts:
@@ -1441,7 +1494,8 @@ class TractVisualizer:
                             break
                 hemisphere_images.update(self._create_hemisphere_views_for_grid(
                     left_tracts, 'left', left_numbered_files, matched_tracts, 
-                    color_scheme, values, converted_color_dict, output_name, keep_csv, keep_color_files))
+                    color_scheme, values, converted_color_dict, output_name, keep_csv, keep_color_files, 
+                    views_to_create))
             
             if right_tracts:
                 right_numbered_files = []
@@ -1454,24 +1508,48 @@ class TractVisualizer:
                             break
                 hemisphere_images.update(self._create_hemisphere_views_for_grid(
                     right_tracts, 'right', right_numbered_files, matched_tracts, 
-                    color_scheme, values, converted_color_dict, output_name, keep_csv, keep_color_files))
+                    color_scheme, values, converted_color_dict, output_name, keep_csv, keep_color_files,
+                    views_to_create))
             
             # Create grid from individual hemisphere views
             if hemisphere_images:
                 # Determine grid type and output filename
                 has_left = left_tracts and len(left_tracts) > 0
                 has_right = right_tracts and len(right_tracts) > 0
+                has_left_lateral = 'left_lateral' in hemisphere_images
+                has_left_medial = 'left_medial' in hemisphere_images
+                has_right_lateral = 'right_lateral' in hemisphere_images
+                has_right_medial = 'right_medial' in hemisphere_images
                 
                 if has_left and has_right:
-                    # Both hemispheres - create 2x2 grid
-                    grid_output = f'{self.output_dir}/{output_name}_all_hemispheres_grid.jpg'
-                    left_lateral = hemisphere_images.get('left_lateral', '')
-                    left_medial = hemisphere_images.get('left_medial', '')
-                    right_lateral = hemisphere_images.get('right_lateral', '')
-                    right_medial = hemisphere_images.get('right_medial', '')
-                    
-                    self._create_2x2_grid(left_lateral, left_medial, right_lateral, right_medial, 
-                                        grid_output, grid_orientation)
+                    # Both hemispheres
+                    # Check if we have both lateral and medial views or just one view type
+                    if has_left_lateral and has_left_medial and has_right_lateral and has_right_medial:
+                        # Full 2x2 grid with all views
+                        grid_output = f'{self.output_dir}/{output_name}_all_hemispheres_grid.jpg'
+                        left_lateral = hemisphere_images.get('left_lateral', '')
+                        left_medial = hemisphere_images.get('left_medial', '')
+                        right_lateral = hemisphere_images.get('right_lateral', '')
+                        right_medial = hemisphere_images.get('right_medial', '')
+                        
+                        self._create_2x2_grid(left_lateral, left_medial, right_lateral, right_medial, 
+                                            grid_output, grid_orientation)
+                    elif has_left_lateral and has_right_lateral and not has_left_medial and not has_right_medial:
+                        # Only lateral views - create 1x2 horizontal grid (left lateral, right lateral)
+                        grid_output = f'{self.output_dir}/{output_name}_both_hemispheres_{view}.jpg'
+                        left_lateral = hemisphere_images.get('left_lateral', '')
+                        right_lateral = hemisphere_images.get('right_lateral', '')
+                        
+                        self._create_single_view_grid([left_lateral, right_lateral], grid_output, orientation='horizontal')
+                        print(f"Created 1x2 horizontal grid with both hemisphere {view} views")
+                    elif has_left_medial and has_right_medial and not has_left_lateral and not has_right_lateral:
+                        # Only medial views - create 1x2 horizontal grid (left medial, right medial)
+                        grid_output = f'{self.output_dir}/{output_name}_both_hemispheres_{view}.jpg'
+                        left_medial = hemisphere_images.get('left_medial', '')
+                        right_medial = hemisphere_images.get('right_medial', '')
+                        
+                        self._create_single_view_grid([left_medial, right_medial], grid_output, orientation='horizontal')
+                        print(f"Created 1x2 horizontal grid with both hemisphere {view} views")
                     
                     # Add colorbar if requested
                     if colorbar:
@@ -1780,6 +1858,141 @@ class TractVisualizer:
                 print(f"Kept numbered tract files in: {numbered_dir}")
 
     # ------------------------------------------------------------
+    # Helper methods for iterative processing
+    # ------------------------------------------------------------
+
+    def _create_hemisphere_pair_grid(self, group_tracts: List[str], base_name: str, 
+                                    tract_to_numbered_file: Dict[str, str],
+                                    color_scheme: str, values: Optional[List[float]], 
+                                    converted_color_dict: Optional[Dict[str, tuple]],
+                                    output_name: str, view: str, grid_orientation: str, 
+                                    colorbar: bool, has_single_color: bool, 
+                                    has_values_column: bool, values_column: Optional[str],
+                                    has_color_column: bool, color_column: Optional[str],
+                                    full_dataset_values: Optional[List[float]], 
+                                    full_dataset_colors: Optional[Dict[str, tuple]],
+                                    keep_csv: bool, keep_color_files: bool,
+                                    all_matched_tracts: List[str]) -> None:
+        """Create a grid showing both hemispheres of a tract with a single view type (lateral or medial)."""
+        
+        # Sort to ensure left comes before right
+        group_tracts_sorted = sorted(group_tracts, key=lambda x: (not x.endswith('_L'), x))
+        
+        view_images = []
+        
+        for tract in group_tracts_sorted:
+            if tract not in tract_to_numbered_file:
+                print(f"Warning: Could not find numbered file for tract '{tract}'")
+                continue
+            
+            numbered_tract_file = tract_to_numbered_file[tract]
+            
+            # Create color file for this tract
+            color_file = f'{self.output_dir}/{output_name}_{tract}_colors.txt'
+            
+            # Get tract index in the original matched_tracts list for value lookup
+            tract_idx = all_matched_tracts.index(tract) if tract in all_matched_tracts else 0
+            
+            # Get the color value for this specific tract
+            if converted_color_dict:
+                self._create_color_file([tract], color_file, color_scheme, None, converted_color_dict)
+            else:
+                if values is not None and tract_idx < len(values):
+                    tract_values = [values[tract_idx]]
+                else:
+                    tract_values = [tract_idx / max(1, len(all_matched_tracts) - 1)]
+                self._create_color_file([tract], color_file, color_scheme, tract_values)
+            
+            # Create the specified view image
+            view_image = f'{self.output_dir}/{output_name}_{tract}_{view}.jpg'
+            csv_command_file = f"{self.output_dir}/temp_command_{tract.replace('/', '_')}_{view}.csv"
+            
+            self._create_dsi_command_csv(csv_command_file, numbered_tract_file, color_file, view_image, view_type=view)
+            self._run_dsi_command(f"{tract}_{view}", csv_command_file, view_image, color_file, keep_csv, keep_color_files)
+            
+            # Clean up color file
+            if not keep_color_files and os.path.exists(color_file):
+                os.remove(color_file)
+            
+            view_images.append(view_image)
+        
+        # Create grid from the view images
+        if len(view_images) == 2:
+            grid_output = f'{self.output_dir}/{output_name}_{base_name}_{view}.jpg'
+            self._create_single_view_grid(view_images, grid_output, orientation=grid_orientation)
+            
+            # Add colorbar if requested
+            if colorbar:
+                colorbar_values = full_dataset_values if full_dataset_values else values
+                self._add_colorbar_to_image(grid_output, group_tracts_sorted, color_scheme, colorbar_values,
+                                          converted_color_dict, has_single_color, has_values_column, values_column,
+                                          has_color_column, color_column, full_dataset_colors)
+            
+            # Clean up individual view images
+            for img_path in view_images:
+                if os.path.exists(img_path):
+                    os.remove(img_path)
+            
+            print(f"Created {view} {grid_orientation} grid for {base_name}: {grid_output}")
+
+    def _process_single_tract_iterative(self, i: int, tract: str, all_matched_tracts: List[str],
+                                       tract_to_numbered_file: Dict[str, str],
+                                       color_scheme: str, values: Optional[List[float]], 
+                                       converted_color_dict: Optional[Dict[str, tuple]],
+                                       output_name: str, view: str, grid_orientation: Optional[str],
+                                       colorbar: bool, has_single_color: bool,
+                                       has_values_column: bool, values_column: Optional[str],
+                                       has_color_column: bool, color_column: Optional[str],
+                                       full_dataset_values: Optional[List[float]],
+                                       full_dataset_colors: Optional[Dict[str, tuple]],
+                                       keep_csv: bool, keep_color_files: bool) -> None:
+        """Process a single tract in iterative mode (extracted from main loop for reuse)."""
+        
+        print(f"Processing tract {i+1}/{len(all_matched_tracts)}: {tract}")
+        
+        # Find the numbered file for this tract
+        if tract not in tract_to_numbered_file:
+            print(f"Warning: Could not find numbered file for tract '{tract}'")
+            return
+        
+        numbered_tract_file = tract_to_numbered_file[tract]
+        
+        # Create color file for this single tract
+        color_file = f'{self.output_dir}/{output_name}_{tract}_colors.txt'
+        
+        # Get the color value for this specific tract
+        if converted_color_dict:
+            self._create_color_file([tract], color_file, color_scheme, None, converted_color_dict)
+        else:
+            if values is not None and i < len(values):
+                tract_values = [values[i]]
+            else:
+                tract_values = [i / max(1, len(all_matched_tracts) - 1)]
+            self._create_color_file([tract], color_file, color_scheme, tract_values)
+        
+        # Check if we need to create a grid or single view
+        if grid_orientation is not None:
+            final_image = self._create_iterative_tract_grid(tract, numbered_tract_file, color_file, 
+                                            output_name, grid_orientation, keep_csv, keep_color_files, view)
+            
+            if colorbar and final_image:
+                colorbar_values = full_dataset_values if full_dataset_values else ([values[i]] if values else None)
+                self._add_colorbar_to_image(final_image, [tract], color_scheme, 
+                                          colorbar_values, converted_color_dict,
+                                          has_single_color, has_values_column, values_column,
+                                          has_color_column, color_column, full_dataset_colors)
+        else:
+            final_image = self._create_single_tract_view(tract, numbered_tract_file, color_file, 
+                                         output_name, view, keep_csv, keep_color_files)
+            
+            if colorbar and final_image:
+                colorbar_values = full_dataset_values if full_dataset_values else ([values[i]] if values else None)
+                self._add_colorbar_to_image(final_image, [tract], color_scheme,
+                                          colorbar_values, converted_color_dict,
+                                          has_single_color, has_values_column, values_column,
+                                          has_color_column, color_column, full_dataset_colors)
+
+    # ------------------------------------------------------------
     # DSI Studio individual tract view
     # ------------------------------------------------------------
 
@@ -1822,17 +2035,27 @@ class TractVisualizer:
         return output_image
     
     def _create_iterative_tract_grid(self, tract: str, tract_file: str, color_file: str,
-                                   output_name: str, grid_orientation: str, keep_csv: bool, keep_color_files: bool) -> str:
-        """Create a grid (lateral + medial) for one tract in iterative mode. Orientation is specified by the grid_orientation parameter (e.g., "vertical", "horizontal").
+                                   output_name: str, grid_orientation: str, keep_csv: bool, keep_color_files: bool,
+                                   view: str = 'lateral') -> str:
+        """Create a grid for one tract in iterative mode. 
+        
+        Can create either:
+        - Grid with both lateral and medial views (if view not specified or both needed)
+        - Grid with only one view type for left and right hemispheres (if view='lateral' or 'medial')
+        
+        Orientation is specified by the grid_orientation parameter (e.g., "vertical", "horizontal").
+        
+        Parameters:
+        -----------
+        view : str
+            View type: 'lateral' or 'medial'. Determines whether to create both views or single view type.
         
         Returns:
-            str: Path to the created grid image file
+        --------
+        str: Path to the created grid image file
         """
         
-        # Create output images for both views
         tract_output_base = f'{output_name}_{tract}'
-        lateral_image = f'{self.output_dir}/{tract_output_base}_lateral.jpg'
-        medial_image = f'{self.output_dir}/{tract_output_base}_medial.jpg'
         
         # Determine hemisphere for grid creation
         is_left = tract.endswith('_L')
@@ -1845,6 +2068,20 @@ class TractVisualizer:
         else:
             # Default to left hemisphere for non-standard tract names
             hemisphere = 'left'
+        
+        # Check if this tract abbreviation has both L and R versions that need to be shown together
+        # This happens when the user passes an abbreviation like 'AF' which expands to both AF_L and AF_R
+        tract_base = tract.replace('_L', '').replace('_R', '')
+        
+        # For iterative mode with grid_orientation and single view, we want to show BOTH hemispheres
+        # So we need to find the paired tract (L/R counterpart) if it exists
+        # This allows showing AF_L and AF_R lateral views side by side in iterative mode
+        
+        # For now, just create the standard single hemisphere grid (lateral + medial)
+        # The user needs to use all_tracts mode to get both hemispheres in one image
+        
+        lateral_image = f'{self.output_dir}/{tract_output_base}_lateral.jpg'
+        medial_image = f'{self.output_dir}/{tract_output_base}_medial.jpg'
         
         # Create lateral view (always 'lateral' string, hemisphere detection is automatic)
         csv_lateral = f"{self.output_dir}/temp_command_{tract.replace('/', '_')}_lateral.csv"
@@ -1885,10 +2122,20 @@ class TractVisualizer:
                                         numbered_tract_files: List[str], all_matched_tracts: List[str], 
                                         color_scheme: str, values: Optional[List[float]], 
                                         converted_color_dict: Optional[Dict[str, tuple]],
-                                        output_name: str, keep_csv: bool, keep_color_files: bool) -> Dict[str, str]:
-        """Create both lateral and medial views for a hemisphere and return image paths."""
+                                        output_name: str, keep_csv: bool, keep_color_files: bool,
+                                        views_to_create: List[str] = None) -> Dict[str, str]:
+        """Create specified views (lateral and/or medial) for a hemisphere and return image paths.
         
-        print(f"Creating lateral and medial views for {hemisphere} hemisphere with numbered files...")
+        Parameters:
+        -----------
+        views_to_create : List[str], optional
+            List of view types to create: ['lateral'], ['medial'], or ['lateral', 'medial']
+            If None, creates both lateral and medial views (default behavior)
+        """
+        if views_to_create is None:
+            views_to_create = ['lateral', 'medial']
+        
+        print(f"Creating {', '.join(views_to_create)} view(s) for {hemisphere} hemisphere with numbered files...")
         
         # Create color file for this hemisphere (colors should be in the same order as numbered files)
         color_file = f'{self.output_dir}/{output_name}_{hemisphere}_hemisphere_colors.txt'
@@ -1915,20 +2162,22 @@ class TractVisualizer:
             hemisphere_color_dict if hemisphere_color_dict else None
         )
         
-        # Create both lateral and medial views
+        # Create requested views
         image_paths = {}
         
-        # Create lateral view
-        lateral_output = f'{self.output_dir}/{output_name}_{hemisphere}_hemisphere_lateral.jpg'
-        self._create_hemisphere_view(hemisphere_tracts, hemisphere, numbered_tract_files, color_file, 
-                                   output_name, 'lateral', keep_csv, lateral_output)
-        image_paths[f'{hemisphere}_lateral'] = lateral_output
+        # Create lateral view if requested
+        if 'lateral' in views_to_create:
+            lateral_output = f'{self.output_dir}/{output_name}_{hemisphere}_hemisphere_lateral.jpg'
+            self._create_hemisphere_view(hemisphere_tracts, hemisphere, numbered_tract_files, color_file, 
+                                       output_name, 'lateral', keep_csv, lateral_output)
+            image_paths[f'{hemisphere}_lateral'] = lateral_output
         
-        # Create medial view
-        medial_output = f'{self.output_dir}/{output_name}_{hemisphere}_hemisphere_medial.jpg'
-        self._create_hemisphere_view(hemisphere_tracts, hemisphere, numbered_tract_files, color_file,
-                                   output_name, 'medial', keep_csv, medial_output)
-        image_paths[f'{hemisphere}_medial'] = medial_output
+        # Create medial view if requested
+        if 'medial' in views_to_create:
+            medial_output = f'{self.output_dir}/{output_name}_{hemisphere}_hemisphere_medial.jpg'
+            self._create_hemisphere_view(hemisphere_tracts, hemisphere, numbered_tract_files, color_file,
+                                       output_name, 'medial', keep_csv, medial_output)
+            image_paths[f'{hemisphere}_medial'] = medial_output
         
         # Clean up color file unless keep_color_files is True
         try:
@@ -2219,6 +2468,88 @@ class TractVisualizer:
             traceback.print_exc()
     
 
+    def _create_single_view_grid(self, image_paths: List[str], output_path: str, orientation: str = 'horizontal') -> None:
+        """Combine multiple images of the same view type into a grid.
+        
+        Parameters:
+        -----------
+        image_paths : List[str]
+            List of image paths to combine (e.g., [left_lateral, right_lateral])
+        output_path : str
+            Path to save the combined grid
+        orientation : str
+            'horizontal' for side-by-side (1 row, N cols) or 'vertical' for stacked (N rows, 1 col)
+        """
+        try:
+            if not image_paths:
+                print("Error: No images provided for single-view grid")
+                return
+            
+            # Load all images
+            images = []
+            for img_path in image_paths:
+                if os.path.exists(img_path):
+                    img = Image.open(img_path)
+                    images.append(img)
+                    print(f"Loaded image: {os.path.basename(img_path)} ({img.width}x{img.height})")
+                else:
+                    print(f"Warning: Image not found: {img_path}")
+                    # Create placeholder
+                    images.append(Image.new('RGB', (1024, 800), color='white'))
+            
+            if not images:
+                print("Error: No valid images found for single-view grid")
+                return
+            
+            # Force all images to be exactly 1024x800
+            target_width, target_height = 1024, 800
+            resized_images = []
+            
+            for i, img in enumerate(images):
+                if img.size != (target_width, target_height):
+                    resized_img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+                    img.close()
+                    resized_images.append(resized_img)
+                    print(f"Resized image {i+1} from {img.size} to ({target_width}, {target_height})")
+                else:
+                    resized_images.append(img)
+            
+            # Create grid based on orientation
+            if orientation == 'horizontal':
+                # Horizontal layout: all images side by side (1 row, N columns)
+                grid_width = target_width * len(resized_images)
+                grid_height = target_height
+                grid_image = Image.new('RGB', (grid_width, grid_height), color='white')
+                
+                for i, img in enumerate(resized_images):
+                    x = i * target_width
+                    grid_image.paste(img, (x, 0))
+                    img.close()
+                
+                print(f"Created horizontal grid: {grid_width}x{grid_height} (1 row x {len(resized_images)} columns)")
+            else:  # vertical
+                # Vertical layout: all images stacked (N rows, 1 column)
+                grid_width = target_width
+                grid_height = target_height * len(resized_images)
+                grid_image = Image.new('RGB', (grid_width, grid_height), color='white')
+                
+                for i, img in enumerate(resized_images):
+                    y = i * target_height
+                    grid_image.paste(img, (0, y))
+                    img.close()
+                
+                print(f"Created vertical grid: {grid_width}x{grid_height} ({len(resized_images)} rows x 1 column)")
+            
+            # Save grid image
+            grid_image.save(output_path, quality=95)
+            grid_image.close()
+            print(f"Saved grid to: {output_path}")
+            
+        except Exception as e:
+            print(f"Error creating single-view grid: {e}")
+            import traceback
+            traceback.print_exc()
+    
     def _create_single_row_grid(self, image_paths: List[str], output_path: str) -> None:
         """Combine multiple images into a single horizontal row grid."""
         try:
