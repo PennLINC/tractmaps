@@ -168,19 +168,3 @@ tract_sa_ranges_df.to_csv(output_path, index=False)
 print(f"\nTract S-A axis ranges calculated for {len(tract_sa_ranges_df)} tracts")
 print(f"Results saved to: {output_path}")
 
-
-# ------------------------------------------------------------------------------------------------
-# --- Get dense z-scored S-A values from neuromaps ---
-# ------------------------------------------------------------------------------------------------
-
-## SA axis
-sa_map_paths = fetch_annotation(source = 'sydnor2021', desc = 'SAaxis', space = 'fsLR', den = '32k')
-sa_dict = {}
-sa_dict['sa_axis'] = {'annotation': ('sydnor2021', 'SAaxis', 'fsLR', '32k'), 'map': sa_map_paths}
-sa_map = tm_parcellate.glasserize(cortical_maps = sa_dict, zscore = True)
-
-# save to csv
-df_sa = pd.DataFrame(sa_map)
-df_sa['regionID'] = range(1, len(df_sa) + 1)
-df_sa.to_csv(f'{root}/derivatives/glasser_parcellation/glasser_sa_axis_zscores.csv', header = True, index = False)
-print(f"Results saved to: {root}/derivatives/glasser_parcellation/glasser_sa_axis_zscores.csv")
