@@ -77,7 +77,7 @@ rhlabels = f'{root}/data/derivatives/glasser_parcellation/HCP_MMP_R.label.gii'
 tracts = pd.read_csv(f'{root}/data/derivatives/tracts/tracts_probabilities/tracts_probabilities.csv')
 
 # reorder columns alphabetically
-tracts = tracts.reindex(sorted(tracts.columns), axis=1)
+# tracts = tracts.reindex(sorted(tracts.columns), axis=1)
 
 # load cognitive terms
 nsdata = pd.read_csv(f'{root}/data/derivatives/neurosynth_annotations/glasser/glasser_tracts_neurosynth_125terms.csv')
@@ -123,46 +123,88 @@ properties_to_plot = ['myelin', 'genes_pc1']
 # ------------------------------------------------------------------------------------------------
 print('Making tract probabilities heatmap...')
 
-fig, axes = plt.subplots(1, 2, figsize=(6, 5), sharey=True)
+# Create single heatmap with both hemispheres
+fig, ax = plt.subplots(1, 1, figsize=(4, 5))
 
-# plot heatmaps with shared color scale
-for idx, hemisphere in enumerate(['left', 'right']):
-    ax = axes[idx]
-    if hemisphere == 'left':
-        hem_subset = tracts[tracts['parcel_name'].str.contains('L_')]
-        tracts_df = hem_subset.filter(regex='left')
-    elif hemisphere == 'right':
-        hem_subset = tracts[tracts['parcel_name'].str.contains('R_')]
-        tracts_df = hem_subset.filter(regex='right')
+# drop columns that are not tracts from the tracts dataframe
+tracts_df = tracts.filter(regex='left|right')
+
+# Plot heatmap with NA handling
+g = sns.heatmap(tracts_df, cmap=tract_cmap, vmin=0, vmax=1, 
+                ax=ax, cbar=False, xticklabels=True, yticklabels=False)
+
+# Set NAs to grey
+g.set_facecolor('lightgrey')
+
+# Set subdivided labels (replacing main labels)
+ax.xaxis.set_label_position('top')
+
+# Add subdivided labels
+# Find the midpoint between left and right tracts
+left_tracts = [col for col in tracts_df.columns if '_left' in col]
+right_tracts = [col for col in tracts_df.columns if '_right' in col]
+left_tract_count = len(left_tracts)
+right_tract_count = len(right_tracts)
+
+# Add "Left tracts" and "Right tracts" labels (on top)
+if left_tract_count > 0 and right_tract_count > 0:
+    # Left tracts label
+    ax.text(left_tract_count/2, -30, 'Left tracts', 
+            ha='center', va='top')
+    # Right tracts label  
+    ax.text(left_tract_count + right_tract_count/2, -30, 'Right tracts', 
+            ha='center', va='top')
+
+# Add "Left regions" and "Right regions" labels (on left)
+# Find the midpoint between left and right regions
+left_regions = tracts[tracts['parcel_name'].str.contains('L_')]
+right_regions = tracts[tracts['parcel_name'].str.contains('R_')]
+left_region_count = len(left_regions)
+right_region_count = len(right_regions)
+
+if left_region_count > 0 and right_region_count > 0:
+    # Left regions label
+    ax.text(-1.5, left_region_count/2, 'Left regions', 
+            ha='right', va='center', rotation=90)
+    # Right regions label
+    ax.text(-1.5, left_region_count + right_region_count/2, 'Right regions', 
+            ha='right', va='center', rotation=90)
+
+# Add rectangles and labels for selected tracts
+xtick_labels = [''] * len(tracts_df.columns)
+for tract in tracts_to_plot:
+    # Left hemisphere
+    if f'{tract}_left' in tracts_df.columns:
+        col_idx = list(tracts_df.columns).index(f'{tract}_left')
+        rect = patches.Rectangle(
+            (col_idx, 0), 1, tracts_df.shape[0],
+            linewidth=1, edgecolor='grey', facecolor='none'
+        )
+        ax.add_patch(rect)
+        xtick_labels[col_idx] = f'Left {tract}'
     
-    # plot heatmap 
-    sns.heatmap(tracts_df, cmap=tract_cmap, vmin=0, vmax=1, ax=axes[idx], cbar=False, xticklabels=True, yticklabels=False)
-    ax.set_xlabel(f'{hemisphere.capitalize()} Tracts', labelpad=10)
-    ax.xaxis.set_label_position('top')
+    # Right hemisphere
+    if f'{tract}_right' in tracts_df.columns:
+        col_idx = list(tracts_df.columns).index(f'{tract}_right')
+        rect = patches.Rectangle(
+            (col_idx, 0), 1, tracts_df.shape[0],
+            linewidth=1, edgecolor='grey', facecolor='none'
+        )
+        ax.add_patch(rect)
+        xtick_labels[col_idx] = f'Right {tract}'
 
-    # add y-axis label only for the left hemisphere
-    if idx == 0:
-        ax.set_ylabel('Regions', labelpad=10)
-        
-	# add rectangle and show xtick labels only for selected tracts
-    xtick_labels = [''] * len(tracts_df.columns) 
-    for tract in tracts_to_plot:
-        if f'{tract}_{hemisphere}' in tracts_df.columns:
-            col_idx = list(tracts_df.columns).index(f'{tract}_{hemisphere}')
-            rect = patches.Rectangle(
-                (col_idx, 0), 1, tracts_df.shape[0],
-                linewidth=1, edgecolor='grey', facecolor='none'
-            )
-            axes[idx].add_patch(rect)
-            xtick_labels[col_idx] = tract 
+ax.tick_params(axis='x', bottom=False)
+ax.set_xticklabels(xtick_labels, rotation=45, ha='right')
 
-    # axes[idx].set_xticks(np.arange(len(tracts_df.columns)) + 0.5) # to keep xtick marks
-    ax.tick_params(axis='x', bottom=False) # to remove xtick marks
-    axes[idx].set_xticklabels(xtick_labels, rotation=90)
-    
-    ax.set_xticks(ax.get_xticks())
-    # For tract labels, enforce ALL CAPS (e.g., AF, UF)
-    axes[idx].set_xticklabels([x.upper() if x else '' for x in xtick_labels], rotation=45, ha='right')
+# Create figure for NA legend
+from matplotlib.patches import Patch
+legend_fig, legend_ax = plt.subplots(figsize=(0.4, 0.5))
+legend_elements = [Patch(facecolor='lightgrey', label='NA', edgecolor='none')]
+legend_ax.legend(handles=legend_elements, loc='center', fontsize=10, frameon=False)
+legend_ax.axis('off')
+legend_fig.tight_layout()
+legend_fig.savefig(f'{results_dir}/na_legend.svg', dpi=300, bbox_inches='tight')
+plt.close(legend_fig)
 
 # add a shared colorbar 
 # fig.colorbar(axes[0].collections[0], ax=axes, location='bottom', shrink=0.4, orientation='horizontal', pad=0.3)
@@ -180,7 +222,7 @@ sm = plt.cm.ScalarMappable(cmap=tract_cmap)
 sm.set_array([])
 cbar = fig_cbar.colorbar(sm, cax=ax_cbar, orientation='horizontal')
 cbar.set_ticks([0, 0.5, 1])
-cbar.set_label('connection probability', labelpad=15)
+cbar.set_label('Connection probability', labelpad=15)
 cbar.ax.xaxis.set_label_position('top')
 cbar.outline.set_visible(False)
 plt.tight_layout()
