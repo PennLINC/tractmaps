@@ -22,8 +22,10 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 from utils import tm_utils
 from utils.tract_visualizer import TractVisualizer
+from utils.figure_formatting import create_panel_figure, save_figure, fit_labels_to_canvas, enforce_fonts
 import seaborn as sns
 import matplotlib
+from matplotlib.patches import Patch
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import TwoSlopeNorm, ListedColormap
@@ -46,10 +48,6 @@ if not os.path.exists(results_dir):
 else:
     print(f"Folder '{results_dir}' already exists.")
 
-# set all plot font sizes to 16, and x and y labels to 14
-plt.rcParams.update({'font.size': 16})
-plt.rc('xtick', labelsize=14)
-plt.rc('ytick', labelsize=14)
 
 # get custom colormaps
 warm_cmap, tract_cmap, categ_warm, cool_warm_cmap, categ_cool_warm, bppy_cmap = tm_utils.make_colormaps()
@@ -102,29 +100,12 @@ terms_to_plot = ['language', 'emotion']
 properties_to_plot = ['myelin', 'genes_pc1']
 
 # ------------------------------------------------------------------------------------------------
-# --- Make colorbars ---
-# ------------------------------------------------------------------------------------------------
-
-# # show cool_warm_cmap as colorbar
-# fig, ax = plt.subplots(figsize=(8, 1))
-# fig.subplots_adjust(bottom=0.5)
-# cbar = plt.colorbar(plt.cm.ScalarMappable(norm=TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1), cmap=cool_warm_cmap),
-# 					cax=ax, orientation='horizontal')
-# plt.show()
-
-# fig, ax = plt.subplots(figsize=(8, 1))
-# fig.subplots_adjust(bottom=0.5)
-# cbar = plt.colorbar(plt.cm.ScalarMappable(norm=TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1), cmap=warm_cmap),
-# 					cax=ax, orientation='horizontal')
-# plt.show()
-
-# ------------------------------------------------------------------------------------------------
 # --- Make tract probabilities heatmap ---
 # ------------------------------------------------------------------------------------------------
 print('Making tract probabilities heatmap...')
 
-# Create single heatmap with both hemispheres
-fig, ax = plt.subplots(1, 1, figsize=(4, 5))
+# Create single heatmap with both hemispheres - using specified panel dimensions
+fig, ax = create_panel_figure(width_mm=49, height_mm=61)
 
 # drop columns that are not tracts from the tracts dataframe
 tracts_df = tracts.filter(regex='left|right')
@@ -178,7 +159,7 @@ for tract in tracts_to_plot:
         col_idx = list(tracts_df.columns).index(f'{tract}_left')
         rect = patches.Rectangle(
             (col_idx, 0), 1, tracts_df.shape[0],
-            linewidth=1, edgecolor='grey', facecolor='none'
+            linewidth=0.5, edgecolor='grey', facecolor='none'
         )
         ax.add_patch(rect)
         xtick_labels[col_idx] = f'Left {tract}'
@@ -188,7 +169,7 @@ for tract in tracts_to_plot:
         col_idx = list(tracts_df.columns).index(f'{tract}_right')
         rect = patches.Rectangle(
             (col_idx, 0), 1, tracts_df.shape[0],
-            linewidth=1, edgecolor='grey', facecolor='none'
+            linewidth=0.5, edgecolor='grey', facecolor='none'
         )
         ax.add_patch(rect)
         xtick_labels[col_idx] = f'Right {tract}'
@@ -196,55 +177,54 @@ for tract in tracts_to_plot:
 ax.tick_params(axis='x', bottom=False)
 ax.set_xticklabels(xtick_labels, rotation=45, ha='right')
 
+# fit labels to physical canvas
+fit_labels_to_canvas(fig, ax)
+
+# enforce font size (default font size is 6pt, family Arial)
+enforce_fonts(fig)
+
+# save heatmap with standard formatting
+save_figure(fig, f'{results_dir}/heatmap_tracts_to_regions.svg')
+plt.close(fig)
+
 # Create figure for NA legend
-from matplotlib.patches import Patch
-legend_fig, legend_ax = plt.subplots(figsize=(0.4, 0.5))
+legend_fig, legend_ax = create_panel_figure(width_mm=15, height_mm=10,
+                                            margins_mm={"left": 2, "right": 2, "top": 2, "bottom": 2})
 legend_elements = [Patch(facecolor='lightgrey', label='NA', edgecolor='none')]
-legend_ax.legend(handles=legend_elements, loc='center', fontsize=10, frameon=False)
+legend_ax.legend(handles=legend_elements, loc='center', fontsize=6, frameon=False)
 legend_ax.axis('off')
-legend_fig.tight_layout()
-legend_fig.savefig(f'{results_dir}/na_legend.svg', dpi=300, bbox_inches='tight')
+fit_labels_to_canvas(legend_fig, legend_ax)
+enforce_fonts(legend_fig)
+save_figure(legend_fig, f'{results_dir}/na_legend.svg')
 plt.close(legend_fig)
 
-# add a shared colorbar 
-# fig.colorbar(axes[0].collections[0], ax=axes, location='bottom', shrink=0.4, orientation='horizontal', pad=0.3)
-# cbar = axes[0].collections[0].colorbar
-# cbar.set_ticks(np.round(cbar.get_ticks(), 1))
-# cbar.set_label('Connection probability', fontsize=14, labelpad=20)
-# cbar.ax.xaxis.set_label_position('top')
-plt.tight_layout()
-plt.savefig(f'{results_dir}/heatmap_tracts_to_regions.svg', dpi=300)
-plt.show()
 
-# create a separate figure for the colorbar
-fig_cbar, ax_cbar = plt.subplots(figsize=(6, 1.5))
+# create a separate figure for the colorbar with exact panel dimensions
+fig_cbar, ax_cbar = create_panel_figure(width_mm=60, height_mm=17)
 sm = plt.cm.ScalarMappable(cmap=tract_cmap)
 sm.set_array([])
 cbar = fig_cbar.colorbar(sm, cax=ax_cbar, orientation='horizontal')
 cbar.set_ticks([0, 0.5, 1])
-cbar.set_label('Connection probability', labelpad=15)
+cbar.set_label('Connection probability', labelpad=4)
 cbar.ax.xaxis.set_label_position('top')
 cbar.outline.set_visible(False)
-plt.tight_layout()
-plt.savefig(f'{results_dir}/colorbar_tracts_to_regions.svg', dpi=300)
-plt.show()
-
-
+fit_labels_to_canvas(fig_cbar, ax_cbar) 
+enforce_fonts(fig_cbar)
+save_figure(fig_cbar, f'{results_dir}/colorbar_tracts_to_regions.svg')
+plt.close(fig_cbar)
 
 
 # ------------------------------------------------------------------------------------------------
 # --- Make neurosynth heatmap ---
 # ------------------------------------------------------------------------------------------------
 
-print('Making neurosynth terms heatmap...')
-
-# heatmap
-fig, ax = plt.subplots(figsize=(5, 5))
+# heatmap - create figure with specified panel dimensions
+fig, ax = create_panel_figure(width_mm=61, height_mm=60)
 abs_max = np.max(np.abs(nsdata)) 
 sns.heatmap(nsdata, cmap=cool_warm_cmap, center=0, cbar=False, xticklabels=True, yticklabels=False, ax=ax, 
             vmin=np.percentile(-abs_max, 2.5), vmax=np.percentile(abs_max, 97.5))
-ax.set_xlabel('Terms', labelpad=10)
-ax.set_ylabel('Regions', labelpad=10)
+ax.set_xlabel('Terms', labelpad=5)
+ax.set_ylabel('Regions', labelpad=5)
 ax.xaxis.set_label_position('top') 
 
 # add rectangle and show xtick labels only for selected tracts
@@ -254,7 +234,7 @@ for term in terms_to_plot:
         col_idx = list(nsdata.columns).index(term)
         rect = patches.Rectangle(
             (col_idx, 0), 1, nsdata.shape[0],
-            linewidth=1, edgecolor='grey', facecolor='none'
+            linewidth=0.5, edgecolor='grey', facecolor='none'
         )
         ax.add_patch(rect) 
         xtick_labels[col_idx] = term 
@@ -264,24 +244,28 @@ ax.tick_params(axis='x', bottom=False) # to remove xtick marks
 ax.set_xticks(ax.get_xticks())
 ax.set_xticklabels([pretty_label(x) if x else '' for x in xtick_labels], rotation=45, ha='right')
 
-# save heatmap
-plt.tight_layout()
-plt.savefig(f'{results_dir}/heatmap_neurosynth_terms.svg', dpi=300)
-plt.show()
+# fit labels to physical canvas and enforce font size
+fit_labels_to_canvas(fig, ax)
+enforce_fonts(fig, font_pt=6)
 
-# create a separate figure for the colorbar
-fig_cbar, ax_cbar = plt.subplots(figsize=(6, 1.5))
+# save heatmap with standard formatting
+save_figure(fig, f'{results_dir}/heatmap_neurosynth_terms.svg')
+plt.close(fig)
+
+# create a separate figure for the colorbar with extra space for labels
+fig_cbar, ax_cbar = create_panel_figure(width_mm=60, height_mm=17)
 norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 sm = plt.cm.ScalarMappable(cmap=cool_warm_cmap, norm=norm)
 cbar = fig_cbar.colorbar(sm, cax=ax_cbar, orientation='horizontal')
 cbar.set_ticks([round(np.percentile(-abs_max, 2.5), 0), 0, round(np.percentile(abs_max, 97.5), 0)])
 cbar.set_ticklabels(['low', '0', 'high'])
-cbar.set_label('z-scores', labelpad=15)
+cbar.set_label('z-scores', labelpad=4)
 cbar.ax.xaxis.set_label_position('top')
 cbar.outline.set_visible(False)
-plt.tight_layout()
-plt.savefig(f'{results_dir}/colorbar_neurosynth_terms.svg', dpi=300)
-plt.show()
+fit_labels_to_canvas(fig_cbar, ax_cbar)
+enforce_fonts(fig_cbar)
+save_figure(fig_cbar, f'{results_dir}/colorbar_neurosynth_terms.svg')
+plt.close(fig_cbar)
 
 # ------------------------------------------------------------------------------------------------
 # --- Make cortical properties heatmap ---
@@ -289,13 +273,13 @@ plt.show()
 
 print('Making cortical properties heatmap...')
 
-# heatmap
-fig, ax = plt.subplots(figsize=(4, 5)) # fig width, height
+# heatmap - create figure with specified panel dimensions
+fig, ax = create_panel_figure(width_mm=50, height_mm=61)
 abs_max = np.max(np.abs(cortical_properties)) 
 sns.heatmap(cortical_properties, cmap=cool_warm_cmap, center=0, cbar=False, xticklabels=True, yticklabels=False, ax=ax, 
             vmin=np.percentile(-abs_max, 2.5), vmax=np.percentile(abs_max, 97.5))
-ax.set_xlabel('Cortical properties', labelpad=10)
-ax.set_ylabel('Regions', labelpad=10)
+ax.set_xlabel('Cortical properties', labelpad=5)
+ax.set_ylabel('Regions', labelpad=5)
 ax.xaxis.set_label_position('top') 
 
 # add rectangle and show xtick labels only for selected tracts
@@ -305,34 +289,38 @@ for property in properties_to_plot:
         col_idx = list(cortical_properties.columns).index(property)
         rect = patches.Rectangle(
             (col_idx, 0), 1, cortical_properties.shape[0],
-            linewidth=1, edgecolor='grey', facecolor='none'
+            linewidth=0.5, edgecolor='grey', facecolor='none'
         )
         ax.add_patch(rect) 
         xtick_labels[col_idx] = property 
 
 # set xticks and xtick labels
-# ax.set_xticks(np.arange(len(cortical_properties.columns)) + 0.5) # to keep xtick marks
 ax.tick_params(axis='x', bottom=False) # to remove xtick marks
 ax.set_xticks(ax.get_xticks())
 ax.set_xticklabels([pretty_label(x) if x else '' for x in xtick_labels], rotation=45, ha='right')
 
-plt.tight_layout()
-plt.savefig(f'{results_dir}/heatmap_cortical_properties.svg', dpi=300)
-plt.show()
+# fit labels to physical canvas and enforce font size
+fit_labels_to_canvas(fig, ax)
+enforce_fonts(fig)
+
+# save heatmap with standard formatting
+save_figure(fig, f'{results_dir}/heatmap_cortical_properties.svg')
+plt.close(fig)
 
 # create a separate figure for the colorbar
-fig_cbar, ax_cbar = plt.subplots(figsize=(6, 1.5))
+fig_cbar, ax_cbar = create_panel_figure(width_mm=60, height_mm=17)
 norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 sm = plt.cm.ScalarMappable(cmap=cool_warm_cmap, norm=norm)
 cbar = fig_cbar.colorbar(sm, cax=ax_cbar, orientation='horizontal')
 cbar.set_ticks([round(np.percentile(-abs_max, 2.5), 0), 0, round(np.percentile(abs_max, 97.5), 0)])
 cbar.set_ticklabels(['low', '0', 'high'])
-cbar.set_label('z-scores', labelpad=15)
+cbar.set_label('z-scores', labelpad=4)
 cbar.ax.xaxis.set_label_position('top')
 cbar.outline.set_visible(False)
-plt.tight_layout()
-plt.savefig(f'{results_dir}/colorbar_cortical_properties.svg', dpi=300)
-plt.show()
+fit_labels_to_canvas(fig_cbar, ax_cbar)
+enforce_fonts(fig_cbar)
+save_figure(fig_cbar, f'{results_dir}/colorbar_cortical_properties.svg')
+plt.close(fig_cbar)
 
 # ------------------------------------------------------------------------------------------------
 # --- Make tract probabilities brain surface plots ---
@@ -357,7 +345,6 @@ for tract in tracts_to_plot:
                             tracts = [left_name, right_name], 
                             connection_threshold=tract_connection_threshold,
                             shared_colorbar=False,
-                            title = f'Cortical endpoints',
                             outpath=f'{results_dir}/brain_{tract}.svg'
                             )
 
@@ -380,7 +367,6 @@ for term in terms_to_plot:
                             surf = 'inflated',
                             customcmap=cool_warm_cmap,
                             shared_colorbar=False,
-                            title=pretty_label(term),
                             outpath=f'{results_dir}/brain_neurosynth_{term}.svg'
                             )
     
@@ -403,7 +389,6 @@ for property in properties_to_plot:
                             surf = 'inflated',
                             customcmap=cool_warm_cmap,
                             shared_colorbar=False,
-                            title = pretty_label(property),
                             outpath=f'{results_dir}/brain_{property}.svg'
                             )
 
@@ -452,7 +437,6 @@ tm_utils.conte69_plot_grid(data=region_data,
                         surf='inflated',
                         customcmap=region_cmap,
                         shared_colorbar=False,
-                        title='HCP-MMP parcellation',
                         outpath=f'{results_dir}/brain_glasser360_regions.svg'
                         )
 
