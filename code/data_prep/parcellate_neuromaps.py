@@ -39,27 +39,40 @@ else:
 # --- Fetch Neuromaps annotations --- #
 # keys are shorter map names; values should be a list of tuples with 4 elements each
 nm_annotations_dict = {
+                    # intracortical myelin
                     'myelin': ('hcps1200', 'myelinmap', 'fsLR', '32k'),
+                    # gene expression
                     'genes_pc1': ('abagen', 'genepc1', 'fsaverage', '10k'),
-                    'pet_gaba': ('norgaard2021', 'flumazenil', 'fsaverage', '164k'),
+                     # synapse density
+                    'pet_sv2a': ('finnema2016', 'ucbj', 'MNI152', '1mm'),
+                    # serotonin
                     'pet_h5t1b': ('beliveau2017', 'az10419369', 'fsaverage', '164k'),
                     'pet_5ht2a': ('beliveau2017', 'cimbi36', 'fsaverage', '164k'),
                     'pet_5ht4': ('beliveau2017', 'sb207145', 'fsaverage', '164k'),
                     'pet_5ht1a': ('savli2012', 'way100635', 'MNI152', '3mm'),
                     'pet_htt': ('beliveau2017', 'dasb', 'fsaverage', '164k'),
                     'pet_ht6': ('radnakrishnan2018', 'gsk215083', 'MNI152', '1mm'),
+                    # histamine
+                    'pet_hist': ('gallezot2017', 'gsk189254', 'MNI152', '1mm'),
+                    # dopamine
                     'pet_d1': ('kaller2017', 'sch23390', 'MNI152', '3mm'),
                     'pet_d2': ('sandiego2015', 'flb457', 'MNI152', '1mm'),
-                    'pet_achm1': ('naganawa2020', 'lsn3172176', 'MNI152', '1mm'),
-                    'pet_mglur5': ('smart2019', 'abp688', 'MNI152', '1mm'),
-                    'pet_mor': ('kantonen2020', 'carfentanil', 'MNI152', '3mm'),
+                    'pet_dat': ('dukart2018', 'fpcit', 'MNI152', '3mm'),
+                    # norepinephrine
                     'pet_net': ('ding2010', 'mrb', 'MNI152', '1mm'),
-                    'pet_sv2a': ('finnema2016', 'ucbj', 'MNI152', '1mm'),
+                    # acetylcholine
+                    'pet_achm1': ('naganawa2020', 'lsn3172176', 'MNI152', '1mm'),
                     'pet_vacht': ('aghourian2017', 'feobv', 'MNI152', '1mm'),
                     'pet_ach': ('hillmer2016', 'flubatine', 'MNI152', '1mm'),
+                    # cannabinoid
                     'pet_cannab': ('normandin2015', 'omar', 'MNI152', '1mm'),
-                    'pet_hist': ('gallezot2017', 'gsk189254', 'MNI152', '1mm'),
-                    'pet_dat': ('dukart2018', 'fpcit', 'MNI152', '3mm')
+                     # opioid
+                    'pet_mor': ('kantonen2020', 'carfentanil', 'MNI152', '3mm'),
+                    # glutamate
+                    'pet_mglur5': ('smart2019', 'abp688', 'MNI152', '1mm'),
+                    'pet_nmda': ('galovic2021', 'ge179', 'MNI152', '1mm'),
+                    # GABA
+                    'pet_gaba': ('norgaard2021', 'flumazenil', 'fsaverage', '164k')
                   }
 
 # fetch neuro annotations

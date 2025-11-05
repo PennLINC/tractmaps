@@ -27,8 +27,9 @@ import pickle
 
 # root directory
 root_dir = '/Users/joelleba/PennLINC/tractmaps'
+data_dir = f'{root_dir}/data/derivatives/tracts/tracts_cortical_similarity/'
 results_dir = f'{root_dir}/results/cortical_similarity/'
-output_dir = f'{results_dir}/cortical_similarity_plots/sensitivity'
+output_dir = f'{results_dir}/sensitivity'
 
 # Create output directory
 if not os.path.exists(output_dir):
@@ -67,19 +68,8 @@ gini_df = pd.read_csv(f'{root_dir}/results/tract_functional_diversity/gini_coeff
 # Map gini_df long tract names to short tract names
 gini_df['Tract'] = gini_df['Tract'].map(tract_types.set_index('Tract_Long_Name')['Tract'])
 
-# load cortical similarity matrix (from 5_cortical_similarity/cortical_similarity.py)
-cortical_similarity = np.load(f'{results_dir}/cortical_similarity.npy')
-
-# load tract-wise cortical similarity npy (from 5_cortical_similarity/cortical_similarity.py)
-with open(f'{results_dir}/tracts_similarities.pickle', 'rb') as f:
-    tract_similarities = pickle.load(f)
-
-# Convert numpy arrays back to dictionaries
-if isinstance(tract_similarities, np.ndarray):
-    tract_similarities = tract_similarities.item()
-
 # Load mean cortical similarities
-mean_similarities_df = pd.read_csv(f'{results_dir}/tracts_mean_cortical_similarity.csv')
+mean_similarities_df = pd.read_csv(f'{data_dir}/tracts_mean_cortical_similarity.csv')
 
 # Convert to dictionary for compatibility with existing code
 means = dict(zip(mean_similarities_df['Tract'], mean_similarities_df['Mean_Cortical_Similarity']))
@@ -139,31 +129,6 @@ if not proj_sa_df.empty:
     r_value_proj_sa = corr_result_proj_sa['observed_corr']
     p_value_proj_sa = corr_result_proj_sa['p_value']
 
-    # Plot using tm_utils function
-    output_path_proj_sa = f'{output_dir}/mean_cortical_similarity_vs_sa_range_projection.svg'
-    tm_utils.plot_correlation(
-        x=x_data_proj_sa, 
-        y=y_data_proj_sa,
-        corr_value=r_value_proj_sa,
-        p_value=p_value_proj_sa,
-        x_label='S-A Range',
-        y_label='Mean Cortical Similarity',
-        color_scheme=bppy_cmap,
-        reverse_colormap=False,
-        colorbar='same_plot',
-        colorbar_label='Mean Cortical Similarity',
-        color_by='y',
-        point_labels=tract_labels_proj_sa,
-        text_box_position='top_right',
-        figure_size=(7, 8),
-        point_size=100,
-        point_alpha=0.8,
-        regression_line=True,
-        title='Projection Tracts',
-        output_path=output_path_proj_sa,
-        dpi=300
-    )
-
 # Projection tracts: Mean cortical similarity vs Gini coefficient
 proj_gini_df = tract_df[tract_df['Tract'].isin(projection_tracts)].copy()
 proj_gini_df = proj_gini_df.dropna(subset=['Gini_Coefficient', 'Mean_Similarity'])
@@ -178,31 +143,6 @@ if not proj_gini_df.empty:
                                                    alternative='two-sided', random_state=42)
     r_value_proj_gini = corr_result_proj_gini['observed_corr']
     p_value_proj_gini = corr_result_proj_gini['p_value']
-
-    # Plot using tm_utils function
-    output_path_proj_gini = f'{output_dir}/mean_cortical_similarity_vs_gini_projection.svg'
-    tm_utils.plot_correlation(
-        x=x_data_proj_gini, 
-        y=y_data_proj_gini,
-        corr_value=r_value_proj_gini,
-        p_value=p_value_proj_gini,
-        x_label='Gini Coefficient',
-        y_label='Mean Cortical Similarity',
-        color_scheme=bppy_cmap,
-        reverse_colormap=False,
-        colorbar='same_plot',
-        colorbar_label='Mean Cortical Similarity',
-        color_by='y',
-        point_labels=tract_labels_proj_gini,
-        text_box_position='top_left',
-        figure_size=(7, 8),
-        point_size=100,
-        point_alpha=0.8,
-        regression_line=True,
-        title='Projection Tracts',
-        output_path=output_path_proj_gini,
-        dpi=300
-    )
 
 # ------------------------------------------------------------------------------------------------
 # --- Analyze association tracts ---
@@ -225,30 +165,6 @@ if not assoc_sa_df.empty:
     r_value_assoc_sa = corr_result_assoc_sa['observed_corr']
     p_value_assoc_sa = corr_result_assoc_sa['p_value']
 
-    # Plot using tm_utils function
-    output_path_assoc_sa = f'{output_dir}/mean_cortical_similarity_vs_sa_range_association.svg'
-    tm_utils.plot_correlation(
-        x=x_data_assoc_sa, 
-        y=y_data_assoc_sa,
-        corr_value=r_value_assoc_sa,
-        p_value=p_value_assoc_sa,
-        x_label='S-A Range',
-        y_label='Mean Cortical Similarity',
-        color_scheme=bppy_cmap,
-        reverse_colormap=False,
-        colorbar='same_plot',
-        colorbar_label='Mean Cortical Similarity',
-        color_by='y',
-        point_labels=tract_labels_assoc_sa,
-        text_box_position='top_right',
-        figure_size=(7, 8),
-        point_size=100,
-        point_alpha=0.8,
-        regression_line=True,
-        title='Association Tracts',
-        output_path=output_path_assoc_sa,
-        dpi=300
-    )
 
 # Association tracts: Mean cortical similarity vs Gini coefficient
 assoc_gini_df = tract_df[tract_df['Tract'].isin(association_tracts)].copy()
@@ -264,31 +180,6 @@ if not assoc_gini_df.empty:
                                                     alternative='two-sided', random_state=42)
     r_value_assoc_gini = corr_result_assoc_gini['observed_corr']
     p_value_assoc_gini = corr_result_assoc_gini['p_value']
-
-    # Plot using tm_utils function
-    output_path_assoc_gini = f'{output_dir}/mean_cortical_similarity_vs_gini_association.svg'
-    tm_utils.plot_correlation(
-        x=x_data_assoc_gini, 
-        y=y_data_assoc_gini,
-        corr_value=r_value_assoc_gini,
-        p_value=p_value_assoc_gini,
-        x_label='Gini Coefficient',
-        y_label='Mean Cortical Similarity',
-        color_scheme=bppy_cmap,
-        reverse_colormap=False,
-        colorbar='same_plot',
-        colorbar_label='Mean Cortical Similarity',
-        color_by='y',
-        point_labels=tract_labels_assoc_gini,
-        text_box_position='top_left',
-        figure_size=(7, 8),
-        point_size=100,
-        point_alpha=0.8,
-        regression_line=True,
-        title='Association Tracts',
-        output_path=output_path_assoc_gini,
-        dpi=300
-    )
 
 # ------------------------------------------------------------------------------------------------
 # --- Save correlation results to CSV ---

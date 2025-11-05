@@ -200,7 +200,7 @@ plt.close(legend_fig)
 
 
 # create a separate figure for the colorbar with exact panel dimensions
-fig_cbar, ax_cbar = create_panel_figure(width_mm=60, height_mm=17)
+fig_cbar, ax_cbar = create_panel_figure(width_mm=60, height_mm=16)
 sm = plt.cm.ScalarMappable(cmap=tract_cmap)
 sm.set_array([])
 cbar = fig_cbar.colorbar(sm, cax=ax_cbar, orientation='horizontal')
@@ -208,8 +208,7 @@ cbar.set_ticks([0, 0.5, 1])
 cbar.set_label('Connection probability', labelpad=4)
 cbar.ax.xaxis.set_label_position('top')
 cbar.outline.set_visible(False)
-fit_labels_to_canvas(fig_cbar, ax_cbar) 
-enforce_fonts(fig_cbar)
+enforce_fonts(fig_cbar, font_pt=8.5)
 save_figure(fig_cbar, f'{results_dir}/colorbar_tracts_to_regions.svg')
 plt.close(fig_cbar)
 
@@ -246,14 +245,14 @@ ax.set_xticklabels([pretty_label(x) if x else '' for x in xtick_labels], rotatio
 
 # fit labels to physical canvas and enforce font size
 fit_labels_to_canvas(fig, ax)
-enforce_fonts(fig, font_pt=6)
+enforce_fonts(fig)
 
 # save heatmap with standard formatting
 save_figure(fig, f'{results_dir}/heatmap_neurosynth_terms.svg')
 plt.close(fig)
 
 # create a separate figure for the colorbar with extra space for labels
-fig_cbar, ax_cbar = create_panel_figure(width_mm=60, height_mm=17)
+fig_cbar, ax_cbar = create_panel_figure(width_mm=60, height_mm=16)
 norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 sm = plt.cm.ScalarMappable(cmap=cool_warm_cmap, norm=norm)
 cbar = fig_cbar.colorbar(sm, cax=ax_cbar, orientation='horizontal')
@@ -262,8 +261,7 @@ cbar.set_ticklabels(['low', '0', 'high'])
 cbar.set_label('z-scores', labelpad=4)
 cbar.ax.xaxis.set_label_position('top')
 cbar.outline.set_visible(False)
-fit_labels_to_canvas(fig_cbar, ax_cbar)
-enforce_fonts(fig_cbar)
+enforce_fonts(fig_cbar, font_pt=8.5)
 save_figure(fig_cbar, f'{results_dir}/colorbar_neurosynth_terms.svg')
 plt.close(fig_cbar)
 
@@ -308,7 +306,7 @@ save_figure(fig, f'{results_dir}/heatmap_cortical_properties.svg')
 plt.close(fig)
 
 # create a separate figure for the colorbar
-fig_cbar, ax_cbar = create_panel_figure(width_mm=60, height_mm=17)
+fig_cbar, ax_cbar = create_panel_figure(width_mm=60, height_mm=16)
 norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 sm = plt.cm.ScalarMappable(cmap=cool_warm_cmap, norm=norm)
 cbar = fig_cbar.colorbar(sm, cax=ax_cbar, orientation='horizontal')
@@ -317,8 +315,7 @@ cbar.set_ticklabels(['low', '0', 'high'])
 cbar.set_label('z-scores', labelpad=4)
 cbar.ax.xaxis.set_label_position('top')
 cbar.outline.set_visible(False)
-fit_labels_to_canvas(fig_cbar, ax_cbar)
-enforce_fonts(fig_cbar)
+enforce_fonts(fig_cbar, font_pt=8.5)
 save_figure(fig_cbar, f'{results_dir}/colorbar_cortical_properties.svg')
 plt.close(fig_cbar)
 
