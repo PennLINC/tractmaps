@@ -340,6 +340,7 @@ def conte69_plot_grid(data, lhlabel, rhlabel, surf='midthickness',
                         contour_linewidth=1.0,
                         contour_opacity=0.6,
                         contour_max_edges=None,
+                        fontsize=28,
                         **kwargs):
                     
     """
@@ -383,6 +384,9 @@ def conte69_plot_grid(data, lhlabel, rhlabel, surf='midthickness',
         List of region IDs to plot. Default is None.
     hemisphere : {'left', 'right', None}, optional 
         If specified, plots only the left or right hemisphere. Default is None (both hemispheres are plotted).
+    fontsize : int, optional
+        Font size for all text elements in the figure (title, colorbar label, colorbar ticks).
+        Default is 28.
     
     Returns
     -------
@@ -393,6 +397,9 @@ def conte69_plot_grid(data, lhlabel, rhlabel, surf='midthickness',
     except ImportError:
         raise ImportError('Cannot use create_brain_plot_grid() if mayavi is not '
                           'installed. Please install mayavi and try again.')
+    
+    # Set font to Arial for all text elements
+    plt.rcParams['font.family'] = 'Arial'
         
     # arguments for plot_conte69
     plot_args = {
@@ -491,13 +498,13 @@ def conte69_plot_grid(data, lhlabel, rhlabel, surf='midthickness',
             tick_labels = [f'{tick:.0f}' for tick in ticks]
         
         cbar.ax.set_xticklabels(tick_labels)
-        cbar.ax.tick_params(labelsize=26)
+        cbar.ax.tick_params(labelsize=fontsize)
 
         # add a colorbar title if desired
-        cbar.set_label(colorbartitle, color=foregroundcolor, fontsize=26)
+        cbar.set_label(colorbartitle, color=foregroundcolor, fontsize=fontsize)
     
     # save and show the figure
-    plt.suptitle(title, fontsize=46)
+    plt.suptitle(title, fontsize=fontsize)
     plt.savefig(outpath)
     plt.show()
 
@@ -632,7 +639,8 @@ def plot_correlation(x, y,
                     point_labels=None, 
                     text_box_position='top_right',
                     figure_size=None,
-                    point_size=100, point_alpha=0.8,
+                    figure_size_mm=None,
+                    point_size=30, point_alpha=0.8,
                     regression_line=True,
                     title=None,
                     output_path=None,
@@ -695,8 +703,13 @@ def plot_correlation(x, y,
     text_box_position : {'top_right', 'top_left', 'bottom_right', 'bottom_left'}, optional
         Position for correlation statistics text box. Default: 'top_right'
     figure_size : tuple, optional
-        Figure size as (width, height). If None, automatically determined based on 
-        colorbar setting: (7, 8) with colorbar, (7, 6) without. Default: None
+        Figure size as (width, height) in inches. If None and figure_size_mm is None, 
+        automatically determined based on colorbar setting: (7, 8) with colorbar, (7, 6) without. 
+        Default: None
+    figure_size_mm : tuple, optional
+        Figure size as (width, height) in millimeters. If provided, takes precedence over 
+        figure_size. This allows specifying exact physical dimensions for InDesign panels.
+        Default: None
     point_size : float, optional
         Size of scatter plot points. Default: 100
     point_alpha : float, optional
@@ -738,6 +751,11 @@ def plot_correlation(x, y,
     import numpy as np
     import pandas as pd
     import os
+    try:
+        from .figure_formatting import setup_figure, save_figure
+    except ImportError:
+        # Fallback for when called as a script
+        from figure_formatting import setup_figure, save_figure
     
     # Convert to numpy arrays and handle NaN values
     x = np.asarray(x)
@@ -774,20 +792,37 @@ def plot_correlation(x, y,
     if reverse_colormap:
         color_scheme = color_scheme.reversed()
     
-    # Set figure size based on colorbar setting
-    if figure_size is None:
+    # Determine figure size: use figure_size_mm if provided, otherwise figure_size, otherwise defaults
+    if figure_size_mm is not None:
+        # Use mm directly
+        width_mm, height_mm = figure_size_mm
+    elif figure_size is not None:
+        # Convert from inches to mm
+        width_mm = figure_size[0] * 25.4
+        height_mm = figure_size[1] * 25.4
+    else:
+        # Use defaults based on colorbar setting
         if colorbar == 'same_plot':
-            figure_size = (7, 8)
+            width_mm = 7 * 25.4  # 177.8 mm
+            height_mm = 8 * 25.4  # 203.2 mm
         else:
-            figure_size = (7, 7)
+            width_mm = 7 * 25.4  # 177.8 mm
+            height_mm = 7 * 25.4  # 177.8 mm
     
-    # Create main figure
-    fig, ax = plt.subplots(figsize=figure_size, dpi=dpi)
+    # Create main figure using figure formatting utilities
+    # Adjust margins if colorbar is on same plot to ensure it doesn't extend beyond plot
+    # margins_mm format: (left, right, bottom, top)
+    if colorbar == 'same_plot':
+        margins_mm = (10, 10, 8, 4)  # left, right, bottom, top
+    else:
+        margins_mm = (10, 12, 10, 4)  
+    fig, ax = setup_figure(width_mm=width_mm, height_mm=height_mm, 
+                                  margins_mm=margins_mm)
     
     # Add regression line if requested
     if regression_line:
         sns.regplot(x=x_clean, y=y_clean, scatter=False,
-                   line_kws={'color': 'grey', 'alpha': 0.7, 'linewidth': 2}, ax=ax)
+                   line_kws={'color': 'grey', 'alpha': 0.7, 'linewidth': 0.5}, ax=ax)
     
     # Determine color values based on color_by parameter
     if color_by == 'x':
@@ -811,27 +846,27 @@ def plot_correlation(x, y,
         if (~significant_mask).sum() > 0:
             scatter_ns = ax.scatter(x_clean[~significant_mask], y_clean[~significant_mask], 
                                  c='lightgrey', alpha=0.6, s=point_size*0.8, zorder=4, 
-                                 label='Non-significant')
+                                 edgecolors='none', label='Non-significant')
         
         # Plot significant points with color scheme
         if significant_mask.sum() > 0:
             scatter = ax.scatter(x_clean[significant_mask], y_clean[significant_mask], 
                                c=color_values[significant_mask], cmap=color_scheme,
                                s=point_size, alpha=point_alpha, zorder=5, 
-                               label='Significant')
+                               edgecolors='none', label='Significant')
         else:
             # If no significant points, create dummy scatter for colorbar
-            scatter = ax.scatter([], [], c=[], cmap=color_scheme, s=point_size)
+            scatter = ax.scatter([], [], c=[], cmap=color_scheme, s=point_size, edgecolors='none')
     else:
         # No significance data - plot all points with color scheme
         scatter = ax.scatter(x_clean, y_clean, c=color_values, cmap=color_scheme,
-                            s=point_size, alpha=point_alpha, zorder=5)
+                            s=point_size, alpha=point_alpha, zorder=5, edgecolors='none')
     
     # Format p-value text
     if p_value < 0.001:
-        p_text = 'p < 0.001'
+        p_text = '$\\it{{p}}$ < 0.001'
     else:
-        p_text = f'p = {p_value:.3f}'
+        p_text = f'$\\it{{p}}$ = {p_value:.3f}'
     
     # Add correlation statistics text box
     text_positions = {
@@ -846,10 +881,13 @@ def plot_correlation(x, y,
     else:
         x_pos, y_pos, ha, va = text_positions['top_right']
     
-    ax.text(x_pos, y_pos, f'r = {corr_value:.3f}\n{p_text}',
-            transform=ax.transAxes, fontsize=16,
+    # Use font size from rcParams (set by setup_figure)
+    # Use label_pt size for text annotations
+    fontsize = plt.rcParams.get('axes.labelsize', 7) # default font size is 7pt
+    ax.text(x_pos, y_pos, f'$\\it{{r}}$ = {corr_value:.3f}\n{p_text}',
+            transform=ax.transAxes, fontsize=fontsize,
             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', 
-                     edgecolor='0.7', linewidth=1, alpha=0.9),
+                     edgecolor='0.7', linewidth=0.5, alpha=0.9),
             va=va, ha=ha)
     
     # Add point labels if provided (non-overlapping)
@@ -861,8 +899,10 @@ def plot_correlation(x, y,
         for i, label in enumerate(point_labels):
             if pd.notna(label):  # Handle potential NaN labels
                 display_label = str(label).replace('_', ' ')
+                # Use base_pt size from rcParams (set by setup_figure)
+                fontsize = plt.rcParams.get('xtick.labelsize', 7) # default font size is 7pt
                 txt = ax.text(x_clean[i], y_clean[i], display_label, 
-                             fontsize=10, ha='left', va='center')
+                             fontsize=fontsize, ha='left', va='center')
                 # Add offset similar to other plotting functions
                 txt.set_position((x_clean[i] + (ax.get_xlim()[1] - ax.get_xlim()[0]) * 0.03,
                                 y_clean[i]))
@@ -877,14 +917,21 @@ def plot_correlation(x, y,
     colorbar_fig = None
     if colorbar == 'same_plot':
         cbar = fig.colorbar(scatter, ax=ax, orientation='horizontal', 
-                           pad=0.15, fraction=0.06, aspect=15)
-        cbar.set_label(colorbar_label, labelpad=10)
-        cbar.ax.tick_params()
+                           pad=0.15, fraction=0.08, aspect=20)
+        cbar.set_label(colorbar_label, labelpad=4)
+        cbar.ax.tick_params(width=0.5, length=2)
         cbar.outline.set_visible(False)
         
     elif colorbar == 'separate_figure':
-        # Create separate colorbar figure
-        colorbar_fig = plt.figure(figsize=(6, 1.2))
+        # Create separate colorbar figure using figure formatting utilities
+        colorbar_width_mm = 40
+        # Increase height to accommodate label at top and ticks at bottom
+        colorbar_height_mm = 15 
+        colorbar_fig, cbar_ax = setup_figure(
+            width_mm=colorbar_width_mm, 
+            height_mm=colorbar_height_mm,
+            margins_mm=(2, 2, 6, 6), # left, right, bottom, top 
+        )
         
         # Create dummy mappable for colorbar using the full range of color values
         # (not just significant ones, to maintain consistent colorbar range)
@@ -894,13 +941,20 @@ def plot_correlation(x, y,
         sm = plt.cm.ScalarMappable(cmap=color_scheme, norm=norm)
         sm.set_array([])
         
-        # Create colorbar directly on the figure with specific positioning
-        cbar_ax = colorbar_fig.add_axes([0.1, 0.35, 1, 0.35])  # [left, bottom, width, height]
+        # Create colorbar on the axes
         cbar = colorbar_fig.colorbar(sm, cax=cbar_ax, orientation='horizontal')
         
-        cbar.set_label(colorbar_label, labelpad=10)
-        cbar.ax.tick_params()
+        # Set ticks every 0.1
+        tick_start = np.ceil(vmin / 0.1) * 0.1
+        tick_end = np.floor(vmax / 0.1) * 0.1 + 0.1
+        tick_values = np.arange(tick_start, tick_end, 0.1)
+        cbar.set_ticks(tick_values)
+        
+        cbar.set_label(colorbar_label, labelpad=4)
+        cbar.ax.xaxis.set_label_position('top')
+        cbar.ax.tick_params(width=0.5, length=2)
         cbar.outline.set_visible(False)
+        
     
     # Set labels and title
     ax.set_xlabel(x_label)
@@ -912,12 +966,13 @@ def plot_correlation(x, y,
     ax.set_facecolor('white')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    
-    plt.tight_layout()
+    ax.spines['bottom'].set_linewidth(0.3)
+    ax.spines['left'].set_linewidth(0.3)
+    ax.tick_params(axis='both', width=0.3)
     
     # Save if path provided
     if output_path:
-        fig.savefig(output_path, bbox_inches='tight', dpi=dpi)
+        save_figure(fig, output_path)
         if colorbar_fig and colorbar == 'separate_figure':
             # Use custom colorbar filename if provided, otherwise use default naming
             if colorbar_filename is not None:
@@ -932,7 +987,7 @@ def plot_correlation(x, y,
                 colorbar_path = output_path.replace('.', '_colorbar.')
             
             print(f"Creating colorbar file: {colorbar_path}")
-            colorbar_fig.savefig(colorbar_path, bbox_inches='tight', dpi=dpi)
+            save_figure(colorbar_fig, colorbar_path)
             print(f"Saved colorbar: {colorbar_path}")
         print(f"Saved plot: {output_path}")
     
@@ -954,3 +1009,5 @@ def plot_correlation(x, y,
         # Close main figure after showing (only when not returning it)
         plt.close(fig)
     
+
+

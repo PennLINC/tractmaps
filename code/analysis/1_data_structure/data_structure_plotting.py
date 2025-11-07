@@ -22,7 +22,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 from utils import tm_utils
 from utils.tract_visualizer import TractVisualizer
-from utils.figure_formatting import create_panel_figure, save_figure, fit_labels_to_canvas, enforce_fonts
+from utils.figure_formatting import setup_figure, save_figure
 import seaborn as sns
 import matplotlib
 from matplotlib.patches import Patch
@@ -105,7 +105,7 @@ properties_to_plot = ['myelin', 'genes_pc1']
 print('Making tract probabilities heatmap...')
 
 # Create single heatmap with both hemispheres - using specified panel dimensions
-fig, ax = create_panel_figure(width_mm=49, height_mm=61)
+fig, ax = setup_figure(width_mm=40, height_mm=50, margins_mm=(6, 2, 10, 2)) # left, right, bottom, top
 
 # drop columns that are not tracts from the tracts dataframe
 tracts_df = tracts.filter(regex='left|right')
@@ -116,40 +116,6 @@ g = sns.heatmap(tracts_df, cmap=tract_cmap, vmin=0, vmax=1,
 
 # Set NAs to grey
 g.set_facecolor('lightgrey')
-
-# Set subdivided labels (replacing main labels)
-ax.xaxis.set_label_position('top')
-
-# Add subdivided labels
-# Find the midpoint between left and right tracts
-left_tracts = [col for col in tracts_df.columns if '_left' in col]
-right_tracts = [col for col in tracts_df.columns if '_right' in col]
-left_tract_count = len(left_tracts)
-right_tract_count = len(right_tracts)
-
-# Add "Left tracts" and "Right tracts" labels (on top)
-if left_tract_count > 0 and right_tract_count > 0:
-    # Left tracts label
-    ax.text(left_tract_count/2, -30, 'Left tracts', 
-            ha='center', va='top')
-    # Right tracts label  
-    ax.text(left_tract_count + right_tract_count/2, -30, 'Right tracts', 
-            ha='center', va='top')
-
-# Add "Left regions" and "Right regions" labels (on left)
-# Find the midpoint between left and right regions
-left_regions = tracts[tracts['parcel_name'].str.contains('L_')]
-right_regions = tracts[tracts['parcel_name'].str.contains('R_')]
-left_region_count = len(left_regions)
-right_region_count = len(right_regions)
-
-if left_region_count > 0 and right_region_count > 0:
-    # Left regions label
-    ax.text(-1.5, left_region_count/2, 'Left regions', 
-            ha='right', va='center', rotation=90)
-    # Right regions label
-    ax.text(-1.5, left_region_count + right_region_count/2, 'Right regions', 
-            ha='right', va='center', rotation=90)
 
 # Add rectangles and labels for selected tracts
 xtick_labels = [''] * len(tracts_df.columns)
@@ -174,41 +140,33 @@ for tract in tracts_to_plot:
         ax.add_patch(rect)
         xtick_labels[col_idx] = f'Right {tract}'
 
-ax.tick_params(axis='x', bottom=False)
+ax.tick_params(axis='x', bottom=False, pad=-1)
 ax.set_xticklabels(xtick_labels, rotation=45, ha='right')
-
-# fit labels to physical canvas
-fit_labels_to_canvas(fig, ax)
-
-# enforce font size (default font size is 6pt, family Arial)
-enforce_fonts(fig)
 
 # save heatmap with standard formatting
 save_figure(fig, f'{results_dir}/heatmap_tracts_to_regions.svg')
 plt.close(fig)
 
 # Create figure for NA legend
-legend_fig, legend_ax = create_panel_figure(width_mm=15, height_mm=10,
-                                            margins_mm={"left": 2, "right": 2, "top": 2, "bottom": 2})
+legend_fig, legend_ax = setup_figure(width_mm=15, height_mm=10,
+                                            margins_mm=(2, 2, 2, 2))
 legend_elements = [Patch(facecolor='lightgrey', label='NA', edgecolor='none')]
 legend_ax.legend(handles=legend_elements, loc='center', fontsize=6, frameon=False)
 legend_ax.axis('off')
-fit_labels_to_canvas(legend_fig, legend_ax)
-enforce_fonts(legend_fig)
 save_figure(legend_fig, f'{results_dir}/na_legend.svg')
 plt.close(legend_fig)
 
 
 # create a separate figure for the colorbar with exact panel dimensions
-fig_cbar, ax_cbar = create_panel_figure(width_mm=60, height_mm=16)
+fig_cbar, ax_cbar = setup_figure(width_mm=40, height_mm=12, margins_mm=(2, 2, 5, 4))
 sm = plt.cm.ScalarMappable(cmap=tract_cmap)
 sm.set_array([])
 cbar = fig_cbar.colorbar(sm, cax=ax_cbar, orientation='horizontal')
 cbar.set_ticks([0, 0.5, 1])
+cbar.ax.tick_params(width=0.5, length=2)
 cbar.set_label('Connection probability', labelpad=4)
 cbar.ax.xaxis.set_label_position('top')
 cbar.outline.set_visible(False)
-enforce_fonts(fig_cbar, font_pt=8.5)
 save_figure(fig_cbar, f'{results_dir}/colorbar_tracts_to_regions.svg')
 plt.close(fig_cbar)
 
@@ -218,7 +176,7 @@ plt.close(fig_cbar)
 # ------------------------------------------------------------------------------------------------
 
 # heatmap - create figure with specified panel dimensions
-fig, ax = create_panel_figure(width_mm=61, height_mm=60)
+fig, ax = setup_figure(width_mm=60, height_mm=55, margins_mm=(6, 2, 11, 6))
 abs_max = np.max(np.abs(nsdata)) 
 sns.heatmap(nsdata, cmap=cool_warm_cmap, center=0, cbar=False, xticklabels=True, yticklabels=False, ax=ax, 
             vmin=np.percentile(-abs_max, 2.5), vmax=np.percentile(abs_max, 97.5))
@@ -239,29 +197,25 @@ for term in terms_to_plot:
         xtick_labels[col_idx] = term 
 
 # set xticks and xtick labels
-ax.tick_params(axis='x', bottom=False) # to remove xtick marks
+ax.tick_params(axis='x', bottom=False, pad=-1)
 ax.set_xticks(ax.get_xticks())
 ax.set_xticklabels([pretty_label(x) if x else '' for x in xtick_labels], rotation=45, ha='right')
-
-# fit labels to physical canvas and enforce font size
-fit_labels_to_canvas(fig, ax)
-enforce_fonts(fig)
 
 # save heatmap with standard formatting
 save_figure(fig, f'{results_dir}/heatmap_neurosynth_terms.svg')
 plt.close(fig)
 
 # create a separate figure for the colorbar with extra space for labels
-fig_cbar, ax_cbar = create_panel_figure(width_mm=60, height_mm=16)
+fig_cbar, ax_cbar = setup_figure(width_mm=40, height_mm=12, margins_mm=(2, 2, 5, 4))
 norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 sm = plt.cm.ScalarMappable(cmap=cool_warm_cmap, norm=norm)
 cbar = fig_cbar.colorbar(sm, cax=ax_cbar, orientation='horizontal')
 cbar.set_ticks([round(np.percentile(-abs_max, 2.5), 0), 0, round(np.percentile(abs_max, 97.5), 0)])
 cbar.set_ticklabels(['low', '0', 'high'])
-cbar.set_label('z-scores', labelpad=4)
+cbar.ax.tick_params(width=0.5, length=2)
+cbar.set_label(r'$\,\it{Z}$-scores', labelpad=4)
 cbar.ax.xaxis.set_label_position('top')
 cbar.outline.set_visible(False)
-enforce_fonts(fig_cbar, font_pt=8.5)
 save_figure(fig_cbar, f'{results_dir}/colorbar_neurosynth_terms.svg')
 plt.close(fig_cbar)
 
@@ -272,7 +226,7 @@ plt.close(fig_cbar)
 print('Making cortical properties heatmap...')
 
 # heatmap - create figure with specified panel dimensions
-fig, ax = create_panel_figure(width_mm=50, height_mm=61)
+fig, ax = setup_figure(width_mm=50, height_mm=55, margins_mm=(6, 2, 12, 6))
 abs_max = np.max(np.abs(cortical_properties)) 
 sns.heatmap(cortical_properties, cmap=cool_warm_cmap, center=0, cbar=False, xticklabels=True, yticklabels=False, ax=ax, 
             vmin=np.percentile(-abs_max, 2.5), vmax=np.percentile(abs_max, 97.5))
@@ -293,29 +247,25 @@ for property in properties_to_plot:
         xtick_labels[col_idx] = property 
 
 # set xticks and xtick labels
-ax.tick_params(axis='x', bottom=False) # to remove xtick marks
+ax.tick_params(axis='x', bottom=False, pad=-1)
 ax.set_xticks(ax.get_xticks())
 ax.set_xticklabels([pretty_label(x) if x else '' for x in xtick_labels], rotation=45, ha='right')
-
-# fit labels to physical canvas and enforce font size
-fit_labels_to_canvas(fig, ax)
-enforce_fonts(fig)
 
 # save heatmap with standard formatting
 save_figure(fig, f'{results_dir}/heatmap_cortical_properties.svg')
 plt.close(fig)
 
 # create a separate figure for the colorbar
-fig_cbar, ax_cbar = create_panel_figure(width_mm=60, height_mm=16)
+fig_cbar, ax_cbar = setup_figure(width_mm=40, height_mm=12, margins_mm=(2, 2, 5, 4))
 norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 sm = plt.cm.ScalarMappable(cmap=cool_warm_cmap, norm=norm)
 cbar = fig_cbar.colorbar(sm, cax=ax_cbar, orientation='horizontal')
 cbar.set_ticks([round(np.percentile(-abs_max, 2.5), 0), 0, round(np.percentile(abs_max, 97.5), 0)])
 cbar.set_ticklabels(['low', '0', 'high'])
-cbar.set_label('z-scores', labelpad=4)
+cbar.set_label(r'$\,\it{Z}$-scores', labelpad=4)
+cbar.ax.tick_params(width=0.5, length=2)
 cbar.ax.xaxis.set_label_position('top')
 cbar.outline.set_visible(False)
-enforce_fonts(fig_cbar, font_pt=8.5)
 save_figure(fig_cbar, f'{results_dir}/colorbar_cortical_properties.svg')
 plt.close(fig_cbar)
 

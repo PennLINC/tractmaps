@@ -22,6 +22,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 from utils import tm_utils
+from utils.figure_formatting import setup_figure, save_figure
 from matplotlib.colors import ListedColormap
 plt.switch_backend('Agg')
 
@@ -49,8 +50,6 @@ xyz = coords[['x-cog', 'y-cog', 'z-cog']].to_numpy()
 
 # load euclidean distances
 euclidean = np.load(euc_npy)
-# select only first 100 regions
-euclidean = euclidean[:180, :180]
 
 # load tract probabilities
 tracts_csv = f'{deriv}/tracts/tracts_probabilities/tracts_probabilities.csv'
@@ -77,27 +76,29 @@ regions_coords = coords[['x-cog', 'y-cog', 'z-cog']].to_numpy()
 # select the first 6 rows
 regions_coords = regions_coords[:6, :]
 
-plt.figure(figsize=(3.5, 2.8), dpi=300)
+fig, ax = setup_figure(width_mm=20, height_mm=35, margins_mm=(0, 0, 0, 0))
 sns.heatmap(
     regions_coords,
     annot=False,
     cmap=cool_warm_cmap,
-    linecolor='white', linewidths=2,
+    linecolor='white', linewidths=1, 
     square=True,
     xticklabels=False, yticklabels=False,
     cbar=False,
 )
 plt.tight_layout()
-plt.savefig(f"{results}/region_xyz_coords.svg", bbox_inches='tight', dpi=300)
+save_figure(fig, f"{results}/region_xyz_coords.svg")
 plt.close()
 print(f"Saved: {results}/region_xyz_coords.svg")
 
 # -------------------------------------------------------------
 # Plot Euclidean distances matrix
 # -------------------------------------------------------------
+# print range of region indices in euclidean matrix
+print(f"Range of region indices in euclidean matrix: {np.arange(euclidean.shape[0])}")
 
 # Render full matrix; avoid heavy white grid covering cells
-plt.figure(figsize=(4, 4), dpi=300)
+fig, ax = setup_figure(width_mm=30, height_mm=30, margins_mm=(0, 0, 0, 0))
 sns.heatmap(
     euclidean,
     annot=False,
@@ -108,7 +109,7 @@ sns.heatmap(
     cbar=False,
 )
 plt.tight_layout()
-plt.savefig(f"{results}/region_euclidean_distances.svg", bbox_inches='tight', dpi=300)
+save_figure(fig, f"{results}/region_euclidean_distances.svg")
 plt.close()
 print(f"Saved: {results}/region_euclidean_distances.svg")
 
@@ -116,19 +117,17 @@ print(f"Saved: {results}/region_euclidean_distances.svg")
 # Create Euclidean distance colorbar
 # ------------------------------------------------------------------------------------------------
 
-fig_cbar, ax_cbar = plt.subplots(figsize=(8, 0.6), dpi=300)
+fig_cbar, ax_cbar = setup_figure(width_mm=35, height_mm=13, margins_mm=(2, 2, 8, 2))
 sm = plt.cm.ScalarMappable(cmap=cool_warm_cmap)
 sm.set_clim(np.nanmin(euclidean), np.nanmax(euclidean))
 sm.set_array([])
 cbar = fig_cbar.colorbar(sm, cax=ax_cbar, orientation='horizontal')
-cbar.set_label('Euclidean distance (mm)', labelpad=8, fontsize=18)
-cbar.ax.tick_params(labelsize=18)
+cbar.set_label('Euclidean distance (mm)', labelpad=4)
+cbar.ax.tick_params(width=0.5, length=2)
 cbar.outline.set_visible(False)
-plt.tight_layout()
-
 out_cbar = f"{results}/euclidean_distance_colorbar.svg"
-plt.savefig(out_cbar, bbox_inches='tight', dpi=300)
-plt.close()
+save_figure(fig_cbar, out_cbar)
+plt.close(fig_cbar)
 print(f"Saved: {out_cbar}")
 
 # ------------------------------------------------------------------------------------------------
@@ -155,12 +154,12 @@ for tract in tracts_for_maps:
         connected_upper_mask = np.triu(np.ones((n_connected, n_connected), dtype=bool), k=1)
         connected_lower_mask = ~connected_upper_mask
         
-        plt.figure(figsize=(5.0, 5.0), dpi=300)
+        fig, ax = setup_figure(width_mm=22, height_mm=22, margins_mm=(0, 0, 0, 0))
         sns.heatmap(
             connected_euclidean,
             mask=connected_lower_mask,
             cmap=cool_warm_cmap,
-            vmin=np.nanmin(connected_euclidean), vmax=np.nanmax(connected_euclidean),
+            vmin=np.nanmin(euclidean), vmax=np.nanmax(euclidean), # use the full matrix range of distances
             square=True,
             xticklabels=False, yticklabels=False,
             cbar=False,
@@ -169,7 +168,7 @@ for tract in tracts_for_maps:
         )
         plt.tight_layout()
         out_path = f"{results}/region_euclidean_upper_{tract}.svg"
-        plt.savefig(out_path, bbox_inches='tight', dpi=300)
+        save_figure(fig, out_path)
         plt.close()
         print(f"Saved: {out_path}")
     else:

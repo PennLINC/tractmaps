@@ -18,6 +18,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 from utils import tm_utils
+from utils.figure_formatting import setup_figure, save_figure
 import pyls
 from scipy.stats import zscore
 import matplotlib.pyplot as plt
@@ -83,7 +84,7 @@ null_singvals = pls_result.permres.perm_singval
 cv_spins = null_singvals**2 / sum(null_singvals**2)
 
 
-p = (1 + sum(null_singvals[lv, :] > pls_result["singvals"][lv]))/(1 + nspins) # p-val from Hansen paper
+p = (1 + sum(null_singvals[lv, :] > pls_result["singvals"][lv]))/(1 + nspins) 
 
 # print variance explained and pvalue
 print(f'PLS \n \
@@ -102,31 +103,36 @@ mask[pls_result.permres.pvals[:10] < 0.05] = 1
 
 # plot variance explained
 plt.ion()
-fig, ax = plt.subplots(figsize=(4, 4))
+fig, ax = setup_figure(width_mm=50, height_mm=50, margins_mm=(10, 2, 6, 2))
 ax.boxplot(x = cv_spins.T * 100, positions = range(len(cv)), # a box is drawn for each column of x
-                boxprops = dict(alpha = 0.5, color = 'gray'), whiskerprops = dict(color = 'grey'), medianprops=dict(color='gray'),
+                boxprops = dict(alpha = 0.5, color = 'gray', linewidth=0.5),
+                whiskerprops = dict(color = 'grey', linewidth=0.5), 
+                medianprops=dict(color='gray', linewidth=0.5),
                 showcaps = False, showfliers = False, zorder = 1)
 # scatter plot of variance explained where significant LVs are colored using mask, non-significant ones are grey
 for i in range(len(cv)):
     color = 'palevioletred' if mask[i] == 1 else 'darkgrey'
-    ax.scatter(i, cv[i] * 100, s = 40, color=color, zorder=2)
+    ax.scatter(i, cv[i] * 100, s = 8, color=color, zorder=2)
 
-ax.set_xlabel('latent variable')
-ax.set_ylabel('covariance explained (%)')
+ax.set_xlabel('Latent variable')
+ax.set_ylabel('Covariance explained (%)')
 sns.despine(trim = False)
 ax.set_xticks([])
 ax.set_yticks(np.arange(0, 50, 10))
-ax.tick_params(labelsize=16)
+ax.spines['bottom'].set_linewidth(0.3)
+ax.spines['left'].set_linewidth(0.3)
+ax.tick_params(width=0.3, length=2)
 
 # Add legend
 legend_elements = [
-    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='palevioletred', markersize=10, label='p < 0.05'),
+    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='palevioletred', markersize=5, label='$\\it{{p}}$ < 0.05'),
     plt.Line2D([0], [0], marker='s', color='w', markerfacecolor='white', markeredgecolor='gray', 
-               markersize=12, markeredgewidth=1, label='spin null')
+               markersize=5, markeredgewidth=0.3, label='spin null')
 ]
 ax.legend(handles=legend_elements, loc='upper right', frameon=True, 
-         facecolor='white', edgecolor='grey', framealpha=0.5,
-         bbox_to_anchor=(1, 1), borderpad=0.5, handletextpad=0.1, handlelength=1.0)
+          facecolor='white', edgecolor='grey', framealpha=0.5,
+          bbox_to_anchor=(1, 1), borderpad=0.3, handletextpad=0.1, handlelength=1.0
+          ).get_frame().set_linewidth(0.5)
 
 plt.tight_layout()
 plt.savefig(f'{output_dir}/scatter_pls_var_exp.svg')
@@ -151,17 +157,26 @@ Median null test score correlation = {round(np.median(testnullres), 2)} \n \
 p = {round(p, 4)} \n')
 
 # plot train and test score correlation distribution
-fig, ax = plt.subplots(figsize=(2.5, 4))
-boxplot = sns.boxplot(data = [train, test, testnullres], ax = ax, palette = ['palevioletred', 'darkgrey', 'lightgrey'], fill = False, 
-                      width = 0.6, showcaps = False, showfliers = False)
+fig, ax = setup_figure(width_mm=39, height_mm=48, margins_mm=(13, 2, 6, 2))
+boxplot = sns.boxplot(
+    data=[train, test, testnullres],
+    ax=ax,
+    palette=['palevioletred', 'darkgrey', 'lightgrey'],
+    fill=False,
+    width=0.6,
+    showcaps=False,
+    showfliers=False,
+    boxprops=dict(linewidth=0.5),
+    whiskerprops=dict(linewidth=0.5),
+    medianprops=dict(linewidth=0.5),
+)
 sns.despine()
-ax.set_xticklabels(['train', 'test', 'null'])
-ax.set_ylabel('score correlation', fontsize=18)
-plt.setp(ax.get_xticklabels(), fontsize=18)
-plt.setp(ax.get_yticklabels(), fontsize=16)
-plt.savefig(f'{output_dir}/pls_glasser360_crossvalidation.svg',
-            bbox_inches = 'tight', dpi = 300,
-            transparent = True)
+ax.set_xticklabels(['Train', 'Test', 'Null'])
+ax.set_ylabel('Score correlation')
+ax.spines['bottom'].set_linewidth(0.3)
+ax.spines['left'].set_linewidth(0.3)
+ax.tick_params(width=0.3, length=2)
+save_figure(fig, f'{output_dir}/pls_glasser360_crossvalidation.svg')
     
 
 # scatter plot of X and Y scores from the median test set
@@ -173,20 +188,22 @@ median_index = np.argsort(test)[len(test) // 2]
 median_x_scores, median_y_scores = test_scores[median_index]
 print(median_x_scores.shape, median_y_scores.shape) # should be ~90 regions, as 25% of 360 regions are used for test = 90 regions
 
-plt.ion()
-plt.figure(figsize=(5, 4))
+fig, ax = setup_figure(width_mm=61, height_mm=48, margins_mm=(10, 2, 10, 2))
 sns.regplot(x=median_x_scores, y=median_y_scores, scatter=False, color='darkgrey')
-plt.scatter(median_x_scores, median_y_scores, alpha=0.8, color='#636BD8', linewidths=0)
+plt.scatter(median_x_scores, median_y_scores, alpha=0.8, s=8, color='#636BD8', linewidths=0)
 sns.despine()
-plt.xlabel('median test cog. term scores', fontsize=18) 
-plt.ylabel('median test tract scores', fontsize=18)
-plt.xticks(fontsize=18)
-plt.yticks(fontsize=18)
-plt.text(0.05, 0.95, f'r = {round(median_test_score_correlation, 3)}\np = {round(p, 4)}', ha='left', va='top', transform=plt.gca().transAxes,
-         bbox=dict(facecolor='white', alpha=0.5, edgecolor='grey', boxstyle='round,pad=0.5'))
+ax.set_xlabel('Median test cognitive term scores') 
+ax.set_ylabel('Median test tract scores')
+# Use font size from rcParams (set by setup_figure)
+fontsize = plt.rcParams.get('axes.labelsize', 7)
+ax.text(0.05, 0.95, f'$\\it{{r}}$ = {round(median_test_score_correlation, 3)}\n$\\it{{p}}$ = {round(p, 4)}', 
+        ha='left', va='top', transform=plt.gca().transAxes, fontsize=fontsize,
+        bbox=dict(facecolor='white', alpha=0.5, edgecolor='grey', linewidth=0.5, boxstyle='round,pad=0.3'))
+ax.spines['bottom'].set_linewidth(0.3)
+ax.spines['left'].set_linewidth(0.3)
+ax.tick_params(width=0.3, length=2)
 plt.tight_layout()
-plt.savefig(f'{output_dir}/scatter_scores.svg')
-plt.show() 
+save_figure(fig, f'{output_dir}/scatter_scores.svg')
 
 # ------------------------------------------------------------------------------------------------
 # --- Plot PLS scores on the cortical surface ---
@@ -230,7 +247,7 @@ for lv in range(1):
 # * positive and negative loadings share the same y axis to avoid having super long bar plots
 
 # function to plot loadings
-def plot_loadings(loadings, errors, names, filename, figsize, top_n = 20, title=None):
+def plot_loadings(loadings, errors, names, filename, figsize, top_n = 20, title=None, margins_mm=(20, 25, 10, 2), capitalize_first=False):
     """
     Plots the top N positive and negative loadings with error bars, ensuring both
     sides are aligned and saved to a file.
@@ -239,9 +256,12 @@ def plot_loadings(loadings, errors, names, filename, figsize, top_n = 20, title=
     loadings (np.ndarray): Array of loadings.
     errors (np.ndarray): Array of errors corresponding to the loadings.
     names (np.ndarray): Array of names corresponding to the loadings.
-    title (str): Title of the plot.
     filename (str): Path to save the plot image.
+    figsize (tuple): Figure size in millimeters as (width_mm, height_mm).
     top_n (int): Number of top values to display for both negative and positive loadings.
+    title (str, optional): Title of the plot.
+    margins_mm (tuple): Margins in millimeters as (left, right, bottom, top). Default is (20, 25, 10, 2).
+    capitalize_first (bool): If True, capitalize the first letter of each label. Default is False.
 
     Returns:
     Saves the plot as an svg file. 
@@ -270,27 +290,41 @@ def plot_loadings(loadings, errors, names, filename, figsize, top_n = 20, title=
     negative_names = np.pad(negative_names, (0, max_length - len(negative_names)), 'constant', constant_values = '')
     positive_names = np.pad(positive_names, (0, max_length - len(positive_names)), 'constant', constant_values = '')
 
-    fig, ax = plt.subplots(figsize = figsize)
+    fig, ax = setup_figure(width_mm=figsize[0], height_mm=figsize[1], margins_mm=margins_mm)
     
     # Plotting the negative loadings
-    ax.barh(np.arange(len(negative_loadings)), negative_loadings, xerr = negative_errors, color = '#636BD8', ecolor = 'gray', alpha = 0.8)
+    ax.barh(np.arange(len(negative_loadings)), negative_loadings, xerr = negative_errors, 
+            color = '#636BD8', ecolor = 'gray', alpha = 0.8, error_kw={'linewidth': 0.3})
     
     # Creating a secondary y-axis for the positive loadings
     ax_right = ax.twinx()
-    ax_right.barh(np.arange(len(positive_loadings)), positive_loadings, xerr = positive_errors, color = '#D53D69', ecolor = 'gray', alpha = 0.8)
+    ax_right.barh(np.arange(len(positive_loadings)), positive_loadings, xerr = positive_errors, 
+                  color = '#D53D69', ecolor = 'gray', alpha = 0.8, error_kw={'linewidth': 0.3})
 
-    # Set y-ticks and labels
-    ax.set_yticks(np.arange(len(negative_names))) # negative side
-    ax.set_yticklabels(negative_names, fontsize = 16) 
-    ax_right.set_yticks(np.arange(len(positive_names))) # positive side
-    ax_right.set_yticklabels(positive_names, fontsize = 16)
-    ax_right.set_ylim(ax.get_ylim()) # align the left and right y-axis ticks 
-    ax.axvline(0, color = 'black', linewidth = 0.7)
-    ax.set_xlabel('loadings', fontsize=24)
-    ax.set_title(title, fontsize=24)
-    ax.tick_params(axis='x', labelsize=18)
-    ax_right.tick_params(axis='x', labelsize=18)
+    # Set y-ticks and labels (replace underscores with spaces, optionally capitalize first letter)
+    def format_label(name):
+        formatted = name.replace('_', ' ')
+        if capitalize_first:
+            formatted = formatted.capitalize()
+        return formatted
     
+    ax.set_yticks(np.arange(len(negative_names))) # negative side
+    ax.set_yticklabels([format_label(name) for name in negative_names]) 
+    ax_right.set_yticks(np.arange(len(positive_names))) # positive side
+    ax_right.set_yticklabels([format_label(name) for name in positive_names])
+    ax_right.set_ylim(ax.get_ylim()) # align the left and right y-axis ticks 
+    ax.axvline(0, color = 'black', linewidth = 0.3)
+    ax.set_xlabel('Loadings')
+    ax.set_title(title)
+    ax.tick_params(axis='x')
+    ax_right.tick_params(axis='x')
+    ax.spines['bottom'].set_linewidth(0.3)
+    ax.spines['left'].set_linewidth(0.3)
+    ax_right.spines['bottom'].set_linewidth(0.3)
+    ax_right.spines['left'].set_linewidth(0.3)
+    ax.tick_params(width=0.3, length=2)
+    ax_right.tick_params(width=0.3, length=2)
+
     # Hide all spines (axis lines) except for the bottom one
     ax.spines['top'].set_visible(False)
     ax.spines['left'].set_visible(False)
@@ -303,8 +337,7 @@ def plot_loadings(loadings, errors, names, filename, figsize, top_n = 20, title=
     ax.invert_yaxis()
     ax_right.invert_yaxis()
     
-    plt.tight_layout()
-    plt.savefig(filename)
+    save_figure(fig, filename)
 
 
 # plot cognitive terms and tracts loadings
@@ -349,8 +382,10 @@ for lv in range(1):  # plot the first LV
         errors = err_x[relidx_x],
         names = term_names[relidx_x],
         filename = f'{output_dir}/lv{lv}_bar_pls_cogloads.svg',
-        figsize = (8, 9),
-        top_n = 20
+        figsize = (77, 80), # width_mm, height_mm
+        margins_mm = (25, 31, 10, 2),
+        top_n = 20,
+        capitalize_first = True  # Capitalize cognitive terms
     )
 
     # plot Y loadings
@@ -361,7 +396,8 @@ for lv in range(1):  # plot the first LV
         errors = err_y[relidx_y],
         names = np.array(base_tract_names)[relidx_y],
         filename = f'{output_dir}/lv{lv}_bar_pls_tractloads.svg',
-        figsize = (6, 7),
+        figsize = (40, 69), # width_mm, height_mm
+        margins_mm = (10, 10, 10, 2),
         top_n = 26 # all tracts 
     )
 

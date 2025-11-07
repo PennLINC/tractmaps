@@ -10,6 +10,7 @@
 
 import os
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import pickle
@@ -19,6 +20,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 from utils import tm_utils
 from utils.tract_visualizer import TractVisualizer
+from utils.figure_formatting import setup_figure, save_figure
 
 # ------------------------------------------------------------------------------------------------
 # --- Set up inputs and outputs ---
@@ -39,8 +41,6 @@ else:
 # Set up colormap
 _, _, _, _, _, bppy_cmap = tm_utils.make_colormaps()
 
-# set fontsize for all plots
-plt.rcParams.update({'font.size': 18})
 
 # Define tracts to highlight in plots
 highlighted_tracts = ['IFOF_left', 'VOF_left']
@@ -69,8 +69,23 @@ print(f"Loaded data for {len(tract_order)} tracts")
 # Load the abbreviations.xlsx file
 abbreviations_path = os.path.join(root_dir, 'data/raw/tract_names/abbreviations.xlsx')
 abbreviations_df = pd.read_excel(abbreviations_path)
-# capitalize only the first letter of each word, except when it's II or III
-abbreviations_df['Pretty_Name'] = abbreviations_df['Full_Name'].str.title().str.replace('Ii', 'II').str.replace('Iii', 'III').str.replace('IIi', 'III')
+# Remove "Segment" (case-insensitive), capitalize only first letter, preserve I/II/III
+def format_pretty_name(name):
+    import re
+    # Remove "Segment" (case-insensitive, with optional spaces)
+    name = re.sub(r'\s*[Ss]egment\s*', ' ', str(name)).strip()
+    # Lowercase everything
+    name = name.lower()
+    # Capitalize first letter
+    if len(name) > 0:
+        name = name[0].upper() + name[1:]
+    # Replace Roman numerals: use word boundaries to match 'i', 'ii', 'iii' as whole words
+    name = re.sub(r'\bii\b', 'II', name, flags=re.IGNORECASE)
+    name = re.sub(r'\biii\b', 'III', name, flags=re.IGNORECASE)
+    name = re.sub(r'\bi\b', 'I', name, flags=re.IGNORECASE)
+    return name
+
+abbreviations_df['Pretty_Name'] = abbreviations_df['Full_Name'].apply(format_pretty_name)
 
 # ------------------------------------------------------------------------------------------------
 # --- Prepare data for plotting ---
@@ -110,7 +125,7 @@ gini_df = gini_df.merge(abbreviations_df[['Tract', 'Pretty_Name']], on='Tract', 
 # ------------------------------------------------------------------------------------------------
 
 print("Creating Lorenz curves...")
-plt.figure(figsize=(7, 6))
+fig, ax = setup_figure(width_mm=75, height_mm=60, margins_mm=(12, 2, 10, 2))
 for i, tract in enumerate(tract_order):
     if tract not in gini_results:
         continue
@@ -118,37 +133,39 @@ for i, tract in enumerate(tract_order):
     
     # Highlight specific tracts
     if tract in highlighted_tracts: 
-        plt.plot(gini_results[tract]["x_lorenz"], gini_results[tract]["y_lorenz"], 
-                 color=tract_color_dict[tract], alpha=1.0, linewidth=3, label=full_name)
+        ax.plot(gini_results[tract]["x_lorenz"], gini_results[tract]["y_lorenz"], 
+                 color=tract_color_dict[tract], alpha=1.0, linewidth=1.5, label=full_name)
     else:
-        plt.plot(gini_results[tract]["x_lorenz"], gini_results[tract]["y_lorenz"], 
-                 color=tract_color_dict[tract], alpha=0.2, linewidth=0.5, label=full_name)
+        ax.plot(gini_results[tract]["x_lorenz"], gini_results[tract]["y_lorenz"], 
+                 color=tract_color_dict[tract], alpha=0.2, linewidth=0.3, label=full_name)
 
-plt.plot([0, 1], [0, 1], color='grey', linestyle=':', lw=2, label='Equality')
-sns.despine()
-plt.xlabel('Cumulative Proportion of Terms')
-plt.ylabel('Cumulative Term Contributions')
-plt.legend().remove()
-plt.tight_layout()
-plt.savefig(os.path.join(output_dir, 'lorenz_curves.svg'), bbox_inches='tight')
-plt.close()
+ax.plot([0, 1], [0, 1], color='grey', linestyle=':', linewidth=0.5, label='Equality')
+sns.despine(ax=ax)
+ax.set_xlabel('Cumulative proportion of terms')
+ax.set_ylabel('Cumulative term contributions')
+ax.spines['bottom'].set_linewidth(0.3)
+ax.spines['left'].set_linewidth(0.3)
+ax.tick_params(axis='both', width=0.3)
+ax.legend().remove()
+save_figure(fig, os.path.join(output_dir, 'lorenz_curves.svg'))
+plt.close(fig)
 
 # ------------------------------------------------------------------------------------------------
 # --- Gini coefficients (sorted) ---
 # ------------------------------------------------------------------------------------------------
 
 print("Creating Gini coefficients plot...")
-plt.figure(figsize=(8, 12))
+fig, ax = setup_figure(width_mm=80, height_mm=140, margins_mm=(52, 8, 8, 2))
 for i, tract in enumerate(tract_order):
     y = gini_df[gini_df['Tract'] == tract]['Gini_Coefficient'].values[0]
-    plt.scatter(y, n_tracts - 1 - i, color=tract_color_dict[tract], s=60)
-plt.yticks(range(n_tracts), tract_order_full_names[::-1])
-plt.ylabel('Tracts (sorted)')
-plt.xlabel('Gini Coefficient')
-sns.despine()
-plt.tight_layout()
-plt.savefig(os.path.join(output_dir, 'gini_coefficients_sorted.svg'))
-plt.close()
+    ax.scatter(y, n_tracts - 1 - i, color=tract_color_dict[tract], s=10)
+ax.set_yticks(range(n_tracts))
+ax.set_yticklabels(tract_order_full_names[::-1])
+ax.set_ylabel('Tracts (sorted)')
+ax.set_xlabel('Gini Coefficient')
+sns.despine(ax=ax)
+save_figure(fig, os.path.join(output_dir, 'gini_coefficients_sorted.svg'))
+plt.close(fig)
 
 # ------------------------------------------------------------------------------------------------
 # --- Create separate plots for left and right hemispheres ---
@@ -162,45 +179,51 @@ right_tracts = [tract for tract in tract_order if tract.endswith('_right') or tr
 
 # Left hemisphere plot
 if left_tracts:
-    plt.figure(figsize=(9, 10))
+    fig, ax = setup_figure(width_mm=53, height_mm=75, margins_mm=(37, 4, 10, 0), base_pt=6)
     for i, tract in enumerate(left_tracts):
         y = gini_df[gini_df['Tract'] == tract]['Gini_Coefficient'].values[0]
         # Draw horizontal line from y-axis to point
-        plt.plot([0, y], [len(left_tracts) - 1 - i, len(left_tracts) - 1 - i], 
-                color=tract_color_dict[tract], linewidth=2, alpha=0.7)
+        ax.plot([0, y], [len(left_tracts) - 1 - i, len(left_tracts) - 1 - i], 
+                color=tract_color_dict[tract], linewidth=0.3, alpha=0.7)
         # Draw circle at the end
-        plt.scatter(y, len(left_tracts) - 1 - i, color=tract_color_dict[tract], s=80, zorder=5)
+        ax.scatter(y, len(left_tracts) - 1 - i, color=tract_color_dict[tract], s=10, zorder=5)
     
     left_tract_names = [gini_df[gini_df['Tract'] == tract]['Pretty_Name'].values[0] for tract in left_tracts]
-    plt.yticks(range(len(left_tracts)), left_tract_names[::-1])
-    plt.xlabel('Gini Coefficient')
-    plt.xlim(0.4, 1.0)
-    # plt.xticks([0.4, 0.6, 0.8, 1.0])
-    sns.despine()
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'gini_coefficients_left_hemisphere.svg'))
-    plt.close()
+    ax.set_yticks(range(len(left_tracts)))
+    ax.set_yticklabels(left_tract_names[::-1])
+    ax.set_xlabel('Gini Coefficient')
+    ax.set_xlim(0.4, 1.0)
+    ax.set_xticks([0.4, 0.7, 1.0])
+    ax.spines['bottom'].set_linewidth(0.3)
+    ax.spines['left'].set_linewidth(0.3)
+    ax.tick_params(axis='both', width=0.3)
+    sns.despine(ax=ax)
+    save_figure(fig, os.path.join(output_dir, 'gini_coefficients_left_hemisphere.svg'))
+    plt.close(fig)
 
 # Right hemisphere plot
 if right_tracts:
-    plt.figure(figsize=(9, 10))
+    fig, ax = setup_figure(width_mm=53, height_mm=75, margins_mm=(37, 4, 10, 0), base_pt=6)
     for i, tract in enumerate(right_tracts):
         y = gini_df[gini_df['Tract'] == tract]['Gini_Coefficient'].values[0]
         # Draw horizontal line from y-axis to point
-        plt.plot([0, y], [len(right_tracts) - 1 - i, len(right_tracts) - 1 - i], 
-                color=tract_color_dict[tract], linewidth=2, alpha=0.7)
+        ax.plot([0, y], [len(right_tracts) - 1 - i, len(right_tracts) - 1 - i], 
+                color=tract_color_dict[tract], linewidth=0.3, alpha=0.7)
         # Draw circle at the end
-        plt.scatter(y, len(right_tracts) - 1 - i, color=tract_color_dict[tract], s=80, zorder=5)
+        ax.scatter(y, len(right_tracts) - 1 - i, color=tract_color_dict[tract], s=10, zorder=5)
     
     right_tract_names = [gini_df[gini_df['Tract'] == tract]['Pretty_Name'].values[0] for tract in right_tracts]
-    plt.yticks(range(len(right_tracts)), right_tract_names[::-1])
-    plt.xlabel('Gini Coefficient')
-    plt.xlim(0.4, 1.0)
-    # plt.xticks([0.4, 0.6, 0.8, 1.0])
-    sns.despine()
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'gini_coefficients_right_hemisphere.svg'))
-    plt.close()
+    ax.set_yticks(range(len(right_tracts)))
+    ax.set_yticklabels(right_tract_names[::-1])
+    ax.set_xlabel('Gini Coefficient')
+    ax.set_xlim(0.4, 1.0)
+    ax.set_xticks([0.4, 0.7, 1.0])
+    ax.spines['bottom'].set_linewidth(0.3)
+    ax.spines['left'].set_linewidth(0.3)
+    ax.tick_params(axis='both', width=0.3)
+    sns.despine(ax=ax)
+    save_figure(fig, os.path.join(output_dir, 'gini_coefficients_right_hemisphere.svg'))
+    plt.close(fig)
 
 print("Plots saved to: ", output_dir)
 
@@ -231,14 +254,14 @@ os.makedirs(output_dir, exist_ok=True)
 viz = TractVisualizer(root_dir=root_dir,
                     output_dir=output_dir)
 
-# Visualize all tracts sorted by Gini values
+# Visualize all tracts sorted by Gini values (both medial and lateral views in 4x4 grid)
 viz.visualize_tracts(gini_df, 
                     values_column='Gini_Coefficient', 
                     color_column='rgb_values', 
                     tract_name_column='Tract',
-                    colorbar=True, 
+                    colorbar=False, 
                     plot_mode='all_tracts',
-                    grid_orientation='vertical'
+                    grid_orientation=None  # None creates both lateral and medial views automatically
                     )
 
 # Alternative visualization: individual tracts sorted by Gini values

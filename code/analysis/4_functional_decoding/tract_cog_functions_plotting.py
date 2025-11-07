@@ -22,7 +22,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 from utils.tract_visualizer import TractVisualizer
-
+from utils.figure_formatting import setup_figure, save_figure
 # ------------------------------------------------------------------------------------------------
 # --- Set up inputs and outputs ---
 # ------------------------------------------------------------------------------------------------
@@ -54,9 +54,6 @@ cat_colors_dict = {
     'learning/memory': '#fc9005',  # light orange
     'emotion': '#ff4c33',  # medium red
 }
-
-# set fontsize for all plots
-plt.rcParams.update({'font.size': 18})
 
 # ------------------------------------------------------------------------------------------------
 # --- Load data ---
@@ -188,29 +185,35 @@ def plot_tract_terms(
         output_dir = f'{term_barplots_dir}_nonzero'
         os.makedirs(output_dir, exist_ok=True)
 
-    # Set figure size based on 'terms' argument
+    # Set figure size based on 'terms' argument (convert inches to mm)
     if terms == 'all_terms':
-        fig_width = 22
+        fig_width_mm = 178 # mm
     else:
-        fig_width = 12
+        fig_width_mm = 95 # mm
+    fig_height_mm = 48 # mm
 
-    plt.figure(figsize=(fig_width, 6))
+    fig, ax = setup_figure(width_mm=fig_width_mm, height_mm=fig_height_mm, 
+                           margins_mm=(12, 0, 31, 0), base_pt=5) # smaller font size for terms barplot
     sns.barplot(
         x='term_display', y='contribution', data=term_data_plot, hue='category',
-        palette=cat_colors_dict, hue_order=ordered_categories
+        palette=cat_colors_dict, hue_order=ordered_categories, ax=ax
     )
-    plt.ylabel('mean z-score\n(normalized)', fontsize=20)
-    plt.xlabel('')
-    plt.legend().set_visible(False)
-    plt.xticks(rotation=90, fontsize=12)
-    plt.ylim(contributions_y_min, tract_y_max + terms_y_buffer)
+    ax.set_ylabel('Mean term\ncontribution')
+    ax.set_xlabel('')
+    ax.legend().set_visible(False)
+    plt.setp(ax.get_xticklabels(), rotation=90)
+    ax.set_ylim(contributions_y_min, tract_y_max + terms_y_buffer)
+    
+    # Set y-ticks every 0.2
+    y_min, y_max = ax.get_ylim()
+    y_ticks = np.arange(0, y_max, 0.2)
+    ax.set_yticks(y_ticks)
 
     # Set x-ticks to black
-    for tick in plt.gca().get_xticklabels():
+    for tick in ax.get_xticklabels():
         tick.set_color('black')
 
     # Add background boxes and dotted lines to separate cognitive categories
-    ax = plt.gca()
     category_boundaries = []
     current_category = None
     
@@ -244,13 +247,17 @@ def plot_tract_terms(
     
     # Draw vertical dotted lines at category boundaries extending to bottom of x-tick labels
     for boundary in category_boundaries:
-        ax.axvline(x=boundary, color='gray', linestyle=':', alpha=0.9, linewidth=1, 
+        ax.axvline(x=boundary, color='gray', linestyle=':', alpha=0.9, linewidth=0.3, 
                    ymin=-0.45, ymax=1, clip_on=False)
 
-    sns.despine()
-    plt.tight_layout()
-    plt.savefig(f'{output_dir}/barplot_terms_{tract_name}_{terms}.svg', bbox_inches='tight', dpi=300, transparent=True)
-    plt.close()
+    # Set axis linewidths to 0.3
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.3)
+    ax.tick_params(axis='both', width=0.3)
+    
+    sns.despine(ax=ax)
+    save_figure(fig, f'{output_dir}/barplot_terms_{tract_name}_{terms}.svg')
+    plt.close(fig)
 
 
 def plot_tract_categories(tract_name, contributions_matrix, categories_y_max, categories_y_buffer):
@@ -307,15 +314,16 @@ def plot_tract_categories(tract_name, contributions_matrix, categories_y_max, ca
     tract_cat_y_max = max(categories_y_max, tract_cat_max)
     y_min = 0
     
-    plt.figure(figsize=(6, 6))
-    ax = sns.barplot(
+    fig, ax = setup_figure(width_mm=30, height_mm=20, margins_mm=(10, 0, 2, 2))
+    sns.barplot(
         x='category',
         y='contribution',
         data=category_means,
         palette=cat_colors_dict,
         order=ordered_categories,
         hue='category',
-        legend=False
+        legend=False,
+        ax=ax
     )
     # Add error bars manually (skip if SEM is all NaN)
     if 'sem' in category_means.columns and not category_means['sem'].isnull().all():
@@ -326,20 +334,25 @@ def plot_tract_categories(tract_name, contributions_matrix, categories_y_max, ca
             yerr=category_means['sem'].values,
             fmt='none',
             ecolor='black',
-            capsize=3,
-            lw=1,
+            capsize=0.8,
+            lw=0.3,
+            capthick=0.2,
             zorder=10
         )
     y_max = tract_cat_y_max + categories_y_buffer
-    plt.ylim(y_min, y_max)
-    plt.ylabel('mean z-score (norm.)')
-    plt.xlabel('')
-    plt.xticks(rotation=90, fontsize=20)
-    sns.despine()
-    plt.tight_layout()
-    plt.savefig(f'{category_barplots_dir}/barplot_categories_{tract_name}.svg', 
-                bbox_inches='tight', dpi=300, transparent=True)
-    plt.close()
+    ax.set_ylim(y_min, y_max)
+    y_min, y_max = ax.get_ylim()
+    y_ticks = np.arange(0, y_max, 0.2)
+    ax.set_yticks(y_ticks)
+    ax.set_ylabel('Category contrib.')
+    ax.set_xlabel('')
+    ax.set_xticks([])
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.3)
+    ax.tick_params(axis='both', width=0.3)
+    sns.despine(ax=ax)
+    save_figure(fig, f'{category_barplots_dir}/barplot_categories_{tract_name}.svg')
+    plt.close(fig)
 
 
 def plot_tract_wordcloud(tract_name, contributions_matrix, weighting='term_contributions'):
@@ -359,27 +372,33 @@ def plot_tract_wordcloud(tract_name, contributions_matrix, weighting='term_contr
     tract_contributions = contributions_matrix[tract_name]
     
     # Create weights dictionary (only nonzero contributions)
+    # Replace underscores with spaces for display
     wordcloud_weights = {}
+    term_mapping = {}  # Map display name (with spaces) to original name (with underscores)
     for term, contrib in tract_contributions.items():
         if contrib > 0:
-            wordcloud_weights[term] = contrib
+            display_term = term.replace('_', ' ')
+            wordcloud_weights[display_term] = contrib
+            term_mapping[display_term] = term
     
     if not wordcloud_weights:
         print(f"No nonzero contributions found for {tract_name}")
         return
 
     def category_color_func(word, font_size, position, orientation, random_state=None, **kwargs):
-        category = terms_to_cats.get(word, 'other')
+        # Look up original term name (with underscores) for category mapping
+        original_term = term_mapping.get(word, word.replace(' ', '_'))
+        category = terms_to_cats.get(original_term, 'other')
         return cat_colors_dict.get(category, cat_colors_dict['other'])
 
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(wordcloud_weights)
     wordcloud = wordcloud.recolor(color_func=category_color_func)
 
-    plt.figure(figsize=(10, 5))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    plt.savefig(f'{wordclouds_dir}/wordcloud_{tract_name}_{weighting}.svg', bbox_inches='tight', dpi=300, transparent=True)
-    plt.close()
+    fig, ax = setup_figure(width_mm=10*25.4, height_mm=5*25.4, margins_mm=(0, 0, 0, 0))
+    ax.imshow(wordcloud, interpolation='bilinear')
+    ax.axis('off')
+    save_figure(fig, f'{wordclouds_dir}/wordcloud_{tract_name}_{weighting}.svg')
+    plt.close(fig)
 
 
 
@@ -388,16 +407,13 @@ def main():
     Main function to create all visualizations.
     """
     # Create legend for cognitive categories
-    plt.figure(figsize=(2, 2))
+    fig, ax = setup_figure(width_mm=105, height_mm=20, margins_mm=(0, 0, 0, 0))
     for category, color in cat_colors_dict.items():
-        plt.plot([], [], color=color, label=category)
-    plt.axis('off')
-    plt.legend(title='cognitive category', loc='center', frameon=False, ncol=4, 
-              fontsize=14, title_fontsize=16)
-    plt.tight_layout()
-    plt.savefig(f'{results_dir}/barplot_legend_categories.svg', bbox_inches='tight', 
-                dpi=300, transparent=True)
-    plt.close()
+        ax.plot([], [], color=color, label=category, marker='s', linestyle='None', markersize=8)
+    ax.axis('off')
+    ax.legend(title='Cognitive category', loc='center', frameon=False, ncol=4, title_fontsize=7)
+    save_figure(fig, f'{results_dir}/barplot_legend_categories.svg')
+    plt.close(fig)
     
     # Process each tract with progress bar
     for tract_name in tqdm(contributions_matrix.columns, desc="Processing tracts"):

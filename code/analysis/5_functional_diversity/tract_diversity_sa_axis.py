@@ -41,9 +41,6 @@ _, _, _, _, _, bppy_cmap = tm_utils.make_colormaps()
 # Set connection threshold
 connection_threshold = 0.5
 
-# set fontsize for all plots
-plt.rcParams.update({'font.size': 18})
-
 # ------------------------------------------------------------------------------------------------
 # --- Load data ---
 # ------------------------------------------------------------------------------------------------
@@ -124,7 +121,7 @@ tm_utils.plot_correlation(
     y=y_data,
     corr_value=r_value,
     p_value=p_value,
-    x_label='S-A Range',
+    x_label='S-A range',
     y_label=tract_diversity_score_label,
     color_scheme=bppy_cmap,
     reverse_colormap=False,
@@ -133,12 +130,12 @@ tm_utils.plot_correlation(
     color_by='y',
     point_labels=tract_labels,
     text_box_position='top_right',
-    figure_size=(7, 8),
-    point_size=100,
+    point_size=30,
     point_alpha=0.8,
     regression_line=True,
     output_path=output_path,
-    dpi=300
+    dpi=300,
+    figure_size_mm=(67, 67)
 )
 
 print(f"Generated plot for full tract set ({len(all_tracts)} tracts) with {tract_diversity_score_label.lower()}")

@@ -15,6 +15,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 from utils.tract_visualizer import TractVisualizer
 from utils import tm_utils
+import matplotlib.pyplot as plt
 
 # ------------------------------------------------------------------------------------------------
 # --- Set inputs and outputs ---
@@ -65,8 +66,8 @@ tm_utils.conte69_plot_grid(
     customcmap=cool_warm_cmap,
     shared_colorbar=True,
     colorbartitle='S-A rank',
-    outpath=f'{results_dir}/brain_sa_axis.svg',
-    # title='S-A axis'
+    fontsize=28,
+    outpath=f'{results_dir}/brain_sa_axis.svg'
 )
 
 # ------------------------------------------------------------------------------------------------
@@ -88,10 +89,8 @@ for abbr in example_tracts:
         vmax=vmax,
         surf='inflated',
         customcmap=cool_warm_cmap,
-        shared_colorbar=True,
-        colorbartitle='S-A rank',
+        shared_colorbar=False,
         outpath=f'{results_dir}/brain_sa_ranks_{abbr}.svg',
-        # title=f'{abbr}',
         tractdata=tracts_df,
         tracts=[left_name, right_name],
         connection_threshold=connection_threshold,

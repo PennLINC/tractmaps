@@ -18,6 +18,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 from utils import tm_utils
+from utils.figure_formatting import setup_figure, save_figure
 from netneurotools import datasets
 
 # ------------------------------------------------------------------------------------------------
@@ -27,9 +28,6 @@ from netneurotools import datasets
 # get custom colormaps
 warm_cmap, tract_cmap, _, cool_warm_cmap, _, _ = tm_utils.make_colormaps()
 
-# set fontsize for all plots
-plt.rcParams.update({'font.size': 20})
-
 # create results directory if it doesn't yet exist
 root = '/Users/joelleba/PennLINC/tractmaps'
 results_dir = f'{root}/results/pls_terms_tracts/pls_diagram'
@@ -38,7 +36,6 @@ if not os.path.exists(results_dir):
     print(f"Folder '{results_dir}' created.")
 else:
     print(f"Folder '{results_dir}' already exists.")
-
 
 # ------------------------------------------------------------------------------------------------
 # --- Generate explanation diagram ---
@@ -54,67 +51,75 @@ term_weights = np.random.randn(terms)
 tract_weights = np.random.randn(tracts)
 
 # regions x terms matrix
-plt.figure(figsize=(5, 5))
-sns.heatmap(regions_terms, annot=False, cmap=cool_warm_cmap, 
-			linecolor='white', linewidths=2, square=True,
+fig, ax = setup_figure(width_mm=35, height_mm=27, margins_mm=(6, 2, 2, 2))
+heatmap = sns.heatmap(regions_terms, annot=False, cmap=cool_warm_cmap, 
+			linecolor='white', linewidths=0.5, square=True,
 			xticklabels=False, yticklabels=False,
-			cbar=True, cbar_kws={'orientation':'horizontal', 'label':'z-scores', 'ticks':[]})
-plt.xlabel('cognitive terms')
-plt.ylabel('regions')
-plt.tight_layout()
-plt.savefig(f'{results_dir}/terms_matrix.svg')
-plt.show()
+			cbar=True, cbar_kws={'orientation':'horizontal', 'label':r'$\it{Z}$-scores', 'ticks':[], 'pad': 0.3}, ax=ax)
+# Make colorbar narrower
+cbar = heatmap.collections[0].colorbar
+cbar_pos = cbar.ax.get_position()
+ax.set_xlabel('Cognitive terms')
+ax.set_ylabel('Regions')
+save_figure(fig, f'{results_dir}/terms_matrix.svg')
+plt.close(fig)
 
 # # regions x tracts matrix
-plt.figure(figsize=(4, 5))
-sns.heatmap(regions_tracts, annot=False, cmap=tract_cmap, 
-			linecolor='white', linewidths=2, square=True,
+fig, ax = setup_figure(width_mm=29, height_mm=26, margins_mm=(2, 2, 3, 2)) # left, right, bottom, top
+heatmap = sns.heatmap(regions_tracts, annot=False, cmap=tract_cmap, 
+			linecolor='white', linewidths=0.5, square=True,
 			xticklabels=False, yticklabels=False,
-			cbar=True, cbar_kws={'orientation':'horizontal', 'label':'connection probability', 'ticks':[]})
-plt.xlabel('tracts')
-plt.ylabel('regions')
-plt.tight_layout()
-plt.savefig(f'{results_dir}/tracts_matrix.svg')
-plt.show()
+			cbar=True, cbar_kws={'orientation':'horizontal', 'label':'Connection probability', 'ticks':[], 'pad': 0.2}, ax=ax)
+# Make colorbar narrower
+cbar = heatmap.collections[0].colorbar
+cbar_pos = cbar.ax.get_position()
+ax.set_xlabel('Tracts')
+ax.set_ylabel('Regions')
+save_figure(fig, f'{results_dir}/tracts_matrix.svg')
+plt.close(fig)
 
 # correlation matrix
-plt.figure(figsize=(4, 6))
+fig, ax = setup_figure(width_mm=30, height_mm=38, margins_mm=(2, 2, 2, 2))
 corrs = np.corrcoef(regions_terms.T, regions_tracts.T)[:terms, terms:]
-sns.heatmap(corrs, annot=False, cmap=cool_warm_cmap, center=0,
-			linecolor='white', linewidths=2, square=True,
+heatmap = sns.heatmap(corrs, annot=False, cmap=cool_warm_cmap, center=0,
+			linecolor='white', linewidths=0.5, square=True,
 			xticklabels=False, yticklabels=False,
-			cbar=True, cbar_kws={'orientation':'horizontal', 'label':'correlation', 'ticks':[]})
-plt.xlabel('tracts')
-plt.ylabel('terms')
-plt.tight_layout()
-plt.savefig(f'{results_dir}/correlations.svg')
-plt.show()
+			cbar=True, cbar_kws={'orientation':'horizontal', 'label':'Correlation', 'ticks':[]}, ax=ax)
+# Make colorbar narrower
+cbar = heatmap.collections[0].colorbar
+cbar_pos = cbar.ax.get_position()
+ax.set_xlabel('Tracts')
+ax.set_ylabel('Terms')
+save_figure(fig, f'{results_dir}/correlations.svg')
+plt.close(fig)
 
 # term and tract weights
-plt.figure(figsize=(3, 3))
-plt.bar(np.arange(terms), term_weights, color='darkgray')
-plt.xticks([])
-plt.yticks([])
-plt.axhline(0, color='black', lw=0.75)
-plt.xlabel('cognitive terms')
-plt.ylabel('weights')
-sns.despine()
-plt.tight_layout()
-plt.savefig(f'{results_dir}/weights_terms.svg')
-plt.show()
+fig, ax = setup_figure(width_mm=20, height_mm=17, margins_mm=(4, 2, 4, 2))
+ax.bar(np.arange(terms), term_weights, color='darkgray')
+ax.set_xticks([])
+ax.set_yticks([])
+ax.axhline(0, color='black', lw=0.2)
+ax.set_xlabel('Cognitive terms')
+ax.set_ylabel('Weights')
+sns.despine(ax=ax)
+ax.spines['bottom'].set_linewidth(0.2)
+ax.spines['left'].set_linewidth(0.2)
+save_figure(fig, f'{results_dir}/weights_terms.svg')
+plt.close(fig)
 
-# plot tract weights (make some negative)
-plt.figure(figsize=(2.5, 3))
-plt.bar(np.arange(tracts), tract_weights, color='darkgray')
-plt.xticks([])
-plt.yticks([])
-plt.axhline(0, color='black', lw=0.75)
-plt.xlabel('tracts')
-plt.ylabel('weights')
-sns.despine()
-plt.tight_layout()
-plt.savefig(f'{results_dir}/weights_tracts.svg')
-plt.show()
+# plot tract weights
+fig, ax = setup_figure(width_mm=19, height_mm=17, margins_mm=(4, 2, 4, 2))
+ax.bar(np.arange(tracts), tract_weights, color='darkgray')
+ax.set_xticks([])
+ax.set_yticks([])
+ax.axhline(0, color='black', lw=0.2)
+ax.set_xlabel('Tracts')
+ax.set_ylabel('Weights')
+sns.despine(ax=ax)
+ax.spines['bottom'].set_linewidth(0.2)
+ax.spines['left'].set_linewidth(0.2)
+save_figure(fig, f'{results_dir}/weights_tracts.svg')
+plt.close(fig)
 
 
 # create fake data of size 360
@@ -134,7 +139,6 @@ tm_utils.conte69_plot_grid(data = term_scores,
                         vmax = np.nanmax(term_scores),
                         surf = 'inflated',
                         customcmap = cool_warm_cmap,
-						title = 'term scores',
                         shared_colorbar = False
 )
 
@@ -147,7 +151,6 @@ tm_utils.conte69_plot_grid(data = tract_scores,
                         vmax = np.nanmax(tract_scores),
                         surf = 'inflated',
                         customcmap = cool_warm_cmap,
-						title = 'tract scores',
                         shared_colorbar = False
 )
 
@@ -191,16 +194,18 @@ def plot_loadings(loadings, errors, names, filename, figsize, top_n = 20, title=
     negative_names = np.pad(negative_names, (0, max_length - len(negative_names)), 'constant', constant_values = '')
     positive_names = np.pad(positive_names, (0, max_length - len(positive_names)), 'constant', constant_values = '')
 
-    fig, ax = plt.subplots(figsize = figsize)
+    fig, ax = setup_figure(width_mm=figsize[0], height_mm=figsize[1], margins_mm=(4, 2, 4, 6 )) # left, right, bottom, top
     
     # Plotting the negative loadings
     ax.barh(np.arange(len(negative_loadings)), negative_loadings, xerr = negative_errors, 
-            color = '#636BD8', ecolor = 'gray', alpha = 0.8, height=barheight)
+            color = '#636BD8', ecolor = 'gray', alpha = 0.8, height=barheight,
+            error_kw={'linewidth': 0.2})
     
     # Creating a secondary y-axis for the positive loadings
     ax_right = ax.twinx()
     ax_right.barh(np.arange(len(positive_loadings)), positive_loadings, xerr = positive_errors, 
-                  color = '#D53D69', ecolor = 'gray', alpha = 0.8, height=barheight)
+                  color = '#D53D69', ecolor = 'gray', alpha = 0.8, height=barheight,
+                  error_kw={'linewidth': 0.2})
 
     # remove x and y-ticks
     ax.set_yticks([]) 
@@ -208,9 +213,12 @@ def plot_loadings(loadings, errors, names, filename, figsize, top_n = 20, title=
     ax_right.set_yticks([]) 
     ax_right.set_xticks([]) 
     ax.axvline(0, color = 'black', linewidth = 0.7)
-    ax.set_xlabel('loadings')
-    ax.set_title(title, fontsize = 20)
-
+    ax.set_xlabel('Loadings')
+    ax.set_title(title)
+    ax.spines['bottom'].set_linewidth(0.2)
+    ax.spines['left'].set_linewidth(0.2)
+    ax_right.spines['bottom'].set_linewidth(0.2)
+    ax_right.spines['left'].set_linewidth(0.2)
     # hide all spines (axis lines) except for the bottom one
     ax.spines['top'].set_visible(False)
     ax.spines['left'].set_visible(False)
@@ -223,8 +231,8 @@ def plot_loadings(loadings, errors, names, filename, figsize, top_n = 20, title=
     ax.invert_yaxis()
     ax_right.invert_yaxis()
     
-    plt.tight_layout()
-    plt.savefig(filename)
+    save_figure(fig, filename)
+    plt.close(fig)
 
 
 np.random.seed(123)
@@ -233,14 +241,12 @@ np.random.seed(123)
 term_loadings = np.random.randn(terms)
 errors = np.random.rand(terms)
 plot_loadings(term_loadings, errors, np.array(['' for i in range(20)]), f'{results_dir}/term_loadings.svg', 
-			  figsize = (3, 4), top_n = 20, 
-			  title = 'cognitive terms')
-plt.show()
+			  figsize = (20, 26), top_n = 20, # fig size in mm
+			  title = 'Cognitive terms')
 
 # tract loadings
 tract_loadings = np.random.randn(tracts)
 errors = np.random.rand(tracts)
 plot_loadings(tract_loadings, errors, np.array(['' for i in range(20)]), f'{results_dir}/tract_loadings.svg', 
-			  figsize = (3, 3), top_n = 20, 
-			  title = 'tracts', barheight=0.6)
-plt.show()
+			  figsize = (17, 20), top_n = 20, # fig size in mm
+			  title = 'Tracts', barheight=0.6)

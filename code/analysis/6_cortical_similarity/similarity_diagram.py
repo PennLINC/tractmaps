@@ -59,8 +59,6 @@ cortical_properties = data[properties]
 
 # Load cortical similarity matrix
 cortical_similarity = np.load(f'{data_dir}/cortical_similarity.npy')
-# Select only first 180 regions (left hemisphere) for plotting
-cortical_similarity = cortical_similarity[:180, :180]
 
 # Load tract probabilities for subsetting example
 tracts_csv = f'{root_dir}/data/derivatives/tracts/tracts_probabilities/tracts_probabilities.csv'
@@ -164,7 +162,7 @@ for tract in tracts_for_maps:
         # Extract similarity values for connected regions only
         connected_similarity = cortical_similarity[np.ix_(connected_indices, connected_indices)]
         
-        # Create upper triangle mask for the smaller matrix
+        # Create upper triangle mask for the smaller matrix (excluding the diagonal)
         connected_upper_mask = np.triu(np.ones((n_connected, n_connected), dtype=bool), k=1)
         connected_lower_mask = ~connected_upper_mask
         
@@ -173,7 +171,7 @@ for tract in tracts_for_maps:
             connected_similarity,
             mask=connected_lower_mask,
             cmap=cool_warm_cmap,
-            vmin=-1, vmax=1,
+            vmin=-1, vmax=1, # full range of similarity values
             square=True,
             xticklabels=False, yticklabels=False,
             cbar=False,

@@ -44,9 +44,6 @@ tract_threshold = 0.5
 # Create threshold suffix for filenames
 thresh_suffix = f'_thresh{int(tract_threshold * 100)}'
 
-# set fontsize for all plots
-plt.rcParams.update({'font.size': 18})
-
 # ------------------------------------------------------------------------------------------------
 # --- Load tract distances ---
 # ------------------------------------------------------------------------------------------------
@@ -55,7 +52,7 @@ plt.rcParams.update({'font.size': 18})
 tract_means = pd.read_csv(f'{euc_dist_dir}/tract_euclidean_distances_means.csv')
 tract_dist = pd.read_csv(f'{euc_dist_dir}/tract_euclidean_distances_pairwise.csv')
 distance_column = 'Mean_Euclidean_Distance'
-distance_label = 'Euclidean Distance'
+distance_label = 'Euclidean distance'
 distance_filename = 'euclidean'
 
 print(f"Using Euclidean distances")
@@ -143,7 +140,7 @@ tm_utils.plot_correlation(
     y=y_data,
     corr_value=r_value,
     p_value=p_value,
-    x_label='S-A Range',
+    x_label='S-A range',
     y_label=f'Mean {distance_label}',
     color_scheme=bppy_cmap,
     reverse_colormap=True,
@@ -152,12 +149,12 @@ tm_utils.plot_correlation(
     color_by='y',
     point_labels=tract_labels,
     text_box_position='top_left',
-    figure_size=(7, 8),
-    point_size=100,
+    point_size=30,
     point_alpha=0.8,
     regression_line=True,
     output_path=output_path,
-    dpi=300
+    dpi=300,
+    figure_size_mm=(75, 85)
 )
 
 print(f"Generated plot for full tract set ({len(all_tracts)} tracts) with {distance_label.lower()}")
