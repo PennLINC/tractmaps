@@ -135,7 +135,7 @@ tm_utils.plot_correlation(
     regression_line=True,
     output_path=output_path,
     dpi=300,
-    figure_size_mm=(67, 67)
+    figure_size_mm=(70, 60)
 )
 
 print(f"Generated plot for full tract set ({len(all_tracts)} tracts) with {tract_diversity_score_label.lower()}")

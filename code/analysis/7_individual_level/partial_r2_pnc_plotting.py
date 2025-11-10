@@ -86,7 +86,7 @@ for file_path in partial_r2_files:
     if "age" in filename:
         measure_name = "Age"
     elif "F3_Executive_Efficiency" in filename:
-        measure_name = "Executive Efficiency"
+        measure_name = "Executive efficiency"
     else:
         measure_name = "Unknown"
     
@@ -311,9 +311,11 @@ for measure_name, measure_df in gam_results.items():
             reverse_cmap = property_name == 'SA_Range' # reverse colormap for S-A range so that yellow is low values
             text_position = 'top_left' if property_name == 'SA_Range' else 'top_right' # top left for S-A range, top right for Gini
             if property_name == 'SA_Range':
-                axis_label = f'S-A Range'
+                axis_label = f'S-A range'
+                colorbar_tick_interval = 25
             else:
-                axis_label = f'Gini Coefficient'
+                axis_label = f'Gini coefficient'
+                colorbar_tick_interval = 0.1
             
             # Clean filename components
             clean_measure = measure_name.lower().replace(' ', '_').replace('.', '')
@@ -331,20 +333,27 @@ for measure_name, measure_df in gam_results.items():
             
             # Create correlation plot for this measure-property combination
             tm_utils.plot_correlation(
-                x=x, y=y,
-                corr_value=r_value, p_value=p_fdr,
+                x=x, 
+                y=y,
+                corr_value=r_value, 
+                p_value=p_fdr,
                 x_label=axis_label,
-                y_label=f'{measure_name} Partial R²',
+                y_label=f'{measure_name} partial R²',
                 reverse_colormap=reverse_cmap,
                 colorbar='separate_figure',  # Creates both plot and colorbar in separate figures
                 colorbar_label=axis_label,
                 color_by='x',  # Color points by tract properties (x-values)
                 colorbar_filename=colorbar_filename, 
-                significance_data=significance_pvals,  # P-values for significance-based coloring of tract data points (partial R²)
+                significance_data=significance_pvals,  # P-values for significance-based coloring of tract data points (partial R²),
+                point_size=30,
+                point_alpha=0.8,
                 significance_threshold=0.05, 
                 point_labels=tract_abbrevs,
                 text_box_position=text_position,
-                output_path=output_path
+                output_path=output_path,
+                colorbar_tick_interval=colorbar_tick_interval,
+                dpi=300,
+                figure_size_mm=(70, 60)
             )
         else:
             print(f"No valid data points for {measure_name} vs {property_name}")

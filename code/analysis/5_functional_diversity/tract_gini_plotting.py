@@ -121,6 +121,79 @@ gini_df['rgb_values'] = gini_df['Tract'].map(tract_color_dict) # will need some 
 gini_df = gini_df.merge(abbreviations_df[['Tract', 'Pretty_Name']], on='Tract', how='left')
 
 # ------------------------------------------------------------------------------------------------
+# --- Load term-to-category mapping for term barplot ---
+# ------------------------------------------------------------------------------------------------
+
+# Load term to category mapping
+terms_to_cats = pd.read_csv(os.path.join(root_dir, 'data/raw/neurosynth_categories/neurosynth_categories_names_125.csv'))
+terms_to_cats = dict(zip(terms_to_cats['cog_term'], terms_to_cats['cog_category']))
+
+# Define cognitive categories and their colors (same as tract_cog_functions_plotting.py)
+cat_colors_dict = {
+    'action': '#35b2d4',  # blue 
+    'exec./cog.\ncontrol': '#41c899',  # sea green 
+    'decis. making': '#8fd6b9',  # light green
+    'language': '#66B2FF',  # light blue
+    'attention': '#9999FF',  # light purple 
+    'perception': '#CCCCFF',  # light lavender
+    'other': '#d48ede',  # light magenta
+    'motivation': '#FF99CC',  # pink
+    'social function': '#f65690',  # light red 
+    'learning/memory': '#fc9005',  # light orange
+    'emotion': '#ff4c33',  # medium red
+}
+
+# ------------------------------------------------------------------------------------------------
+# --- Plot term barplot for IFOF_left (sorted in ascending order) ---
+# ------------------------------------------------------------------------------------------------
+
+print("Creating term barplot for IFOF_left (ascending order)...")
+
+# Get term data for IFOF_left
+tract_name = 'IFOF_left'
+tract_contributions = pd.Series(all_tracts_data[tract_name])
+
+term_data = pd.DataFrame({
+    'term': tract_contributions.index,
+    'contribution': tract_contributions.values
+})
+
+
+# Add category information
+term_data['category'] = term_data['term'].map(terms_to_cats)
+
+# Sort by contribution in ascending order
+term_data = term_data.sort_values('contribution', ascending=True)
+
+# Set figure size
+fig_width_mm = 175  # mm
+fig_height_mm = 30  # mm
+
+fig, ax = setup_figure(width_mm=fig_width_mm, height_mm=fig_height_mm, 
+                       margins_mm=(12, 0, 6, 4))
+sns.barplot(
+    x='term', y='contribution', data=term_data, hue='category',
+    palette=cat_colors_dict, ax=ax
+)
+ax.set_ylabel('Mean term\ncontribution')
+ax.set_xlabel('Cognitive terms')
+ax.legend().set_visible(False)
+ax.set_xticklabels([])
+ax.set_ylim(0, 0.6)
+y_min, y_max = ax.get_ylim()
+y_ticks = np.arange(0, y_max + 0.2, 0.2) 
+ax.set_yticks(y_ticks)
+
+for spine in ax.spines.values():
+    spine.set_linewidth(0.3)
+ax.tick_params(axis='y', width=0.3)
+ax.tick_params(axis='x', width=0.3, length=1.2)
+
+sns.despine(ax=ax)
+save_figure(fig, os.path.join(output_dir, f'terms_barplot_{tract_name}_sorted_ascending.svg'))
+plt.close(fig)
+
+# ------------------------------------------------------------------------------------------------
 # --- Lorenz curves for all tracts ---
 # ------------------------------------------------------------------------------------------------
 
@@ -179,7 +252,7 @@ right_tracts = [tract for tract in tract_order if tract.endswith('_right') or tr
 
 # Left hemisphere plot
 if left_tracts:
-    fig, ax = setup_figure(width_mm=53, height_mm=75, margins_mm=(37, 4, 10, 0), base_pt=6)
+    fig, ax = setup_figure(width_mm=60, height_mm=80, margins_mm=(42, 4, 10, 0), base_pt=7)
     for i, tract in enumerate(left_tracts):
         y = gini_df[gini_df['Tract'] == tract]['Gini_Coefficient'].values[0]
         # Draw horizontal line from y-axis to point
@@ -203,7 +276,7 @@ if left_tracts:
 
 # Right hemisphere plot
 if right_tracts:
-    fig, ax = setup_figure(width_mm=53, height_mm=75, margins_mm=(37, 4, 10, 0), base_pt=6)
+    fig, ax = setup_figure(width_mm=60, height_mm=80, margins_mm=(42, 4, 10, 0), base_pt=7)
     for i, tract in enumerate(right_tracts):
         y = gini_df[gini_df['Tract'] == tract]['Gini_Coefficient'].values[0]
         # Draw horizontal line from y-axis to point

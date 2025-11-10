@@ -645,7 +645,8 @@ def plot_correlation(x, y,
                     title=None,
                     output_path=None,
                     dpi=300,
-                    return_figure=False):
+                    return_figure=False,
+                    colorbar_tick_interval=0.1):
     """
     Create a correlation scatter plot with customizable styling and colorbar options.
     
@@ -724,6 +725,9 @@ def plot_correlation(x, y,
         Resolution for saved figure. Default: 300
     return_figure : bool, optional
         Whether to return the figure object instead of showing it. Default: False
+    colorbar_tick_interval : float, optional
+        Interval for colorbar ticks (e.g., 0.1 for ticks every 0.1, 0.2 for ticks every 0.2).
+        Only applies when colorbar='separate_figure'. Default: 0.1
     
     Returns
     -------
@@ -812,10 +816,17 @@ def plot_correlation(x, y,
     # Create main figure using figure formatting utilities
     # Adjust margins if colorbar is on same plot to ensure it doesn't extend beyond plot
     # margins_mm format: (left, right, bottom, top)
+    # Increase left margin when significance_data is used to prevent y-axis label cutoff
     if colorbar == 'same_plot':
-        margins_mm = (10, 10, 8, 4)  # left, right, bottom, top
+        if significance_data is not None:
+            margins_mm = (14, 10, 8, 4)  # left, right, bottom, top (increased left for y-label)
+        else:
+            margins_mm = (10, 10, 8, 4)  # left, right, bottom, top
     else:
-        margins_mm = (10, 12, 10, 4)  
+        if significance_data is not None:
+            margins_mm = (14, 12, 10, 4)  # left, right, bottom, top (increased left for y-label)
+        else:
+            margins_mm = (10, 12, 10, 4)  
     fig, ax = setup_figure(width_mm=width_mm, height_mm=height_mm, 
                                   margins_mm=margins_mm)
     
@@ -944,10 +955,10 @@ def plot_correlation(x, y,
         # Create colorbar on the axes
         cbar = colorbar_fig.colorbar(sm, cax=cbar_ax, orientation='horizontal')
         
-        # Set ticks every 0.1
-        tick_start = np.ceil(vmin / 0.1) * 0.1
-        tick_end = np.floor(vmax / 0.1) * 0.1 + 0.1
-        tick_values = np.arange(tick_start, tick_end, 0.1)
+        # Set ticks at specified interval
+        tick_start = np.ceil(vmin / colorbar_tick_interval) * colorbar_tick_interval
+        tick_end = np.floor(vmax / colorbar_tick_interval) * colorbar_tick_interval + colorbar_tick_interval
+        tick_values = np.arange(tick_start, tick_end, colorbar_tick_interval)
         cbar.set_ticks(tick_values)
         
         cbar.set_label(colorbar_label, labelpad=4)

@@ -43,8 +43,6 @@ connection_threshold = 0.5
 # get custom colormaps
 warm_cmap, _, _, _, _, bppy_cmap = tm_utils.make_colormaps()
 
-# set fontsize for all plots
-plt.rcParams.update({'font.size': 18})
 
 # ------------------------------------------------------------------------------------------------
 # --- Load data ---
@@ -133,22 +131,23 @@ if not sa_plot_df.empty:
         y=y_data_sa,
         corr_value=r_value_sa,
         p_value=p_value_sa,
-        x_label='S-A Range',
-        y_label='Mean Cortical Similarity',
+        x_label='S-A range',
+        y_label='Mean cortical similarity',
         color_scheme=bppy_cmap,
         reverse_colormap=False,
         colorbar='separate_figure',
-        colorbar_label='Mean Cortical Similarity',
+        colorbar_label='Mean cortical similarity',
         colorbar_filename='mean_cortical_similarity.svg',
         color_by='y',
         point_labels=tract_labels_sa,
         text_box_position='top_right',
-        figure_size=(7, 8),
-        point_size=100,
+        point_size=30,
         point_alpha=0.8,
         regression_line=True,
+        colorbar_tick_interval=0.2,
         output_path=output_path_sa,
-        dpi=300
+        dpi=300,
+        figure_size_mm=(85, 80)
     )
 
 print("Creating mean cortical similarity vs Gini coefficient plot...")
@@ -178,22 +177,23 @@ if not gini_plot_df.empty:
         y=y_data_gini,
         corr_value=r_value_gini,
         p_value=p_value_gini,
-        x_label='Gini Coefficient',
-        y_label='Mean Cortical Similarity',
+        x_label='Gini coefficient',
+        y_label='Mean cortical similarity',
         color_scheme=bppy_cmap,
         reverse_colormap=False,
         colorbar='separate_figure',
-        colorbar_label='Mean Cortical Similarity',
+        colorbar_label='Mean cortical similarity',
         colorbar_filename='mean_cortical_similarity.svg',
         color_by='y',
         point_labels=tract_labels_gini,
         text_box_position='top_left',
-        figure_size=(7, 8),
-        point_size=100,
+        point_size=30,
         point_alpha=0.8,
         regression_line=True,
+        colorbar_tick_interval=0.2,
         output_path=output_path_gini,
-        dpi=300
+        dpi=300,
+        figure_size_mm=(85, 80)
     )
 
 # Save correlation results to CSV

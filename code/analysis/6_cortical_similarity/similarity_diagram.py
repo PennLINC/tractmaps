@@ -18,6 +18,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 from utils import tm_utils
+from utils.figure_formatting import setup_figure, save_figure
 plt.switch_backend('Agg')
 
 # ------------------------------------------------------------------------------------------------
@@ -38,9 +39,6 @@ else:
 
 # get custom colormaps
 warm_cmap, _, _, cool_warm_cmap, _, _ = tm_utils.make_colormaps()
-
-# set fontsize for all plots
-plt.rcParams.update({'font.size': 18})
 
 # Tracts to plot (left hemisphere)
 tracts_for_maps = ['IFOF_left', 'VOF_left']
@@ -81,26 +79,26 @@ for i, prop in enumerate(example_properties):
     prop_values = cortical_properties[prop].values[:6]
     combined_matrix[:, i] = prop_values
 
-plt.figure(figsize=(3.5, 2.8), dpi=300)
+fig, ax = setup_figure(width_mm=23, height_mm=45, margins_mm=(0, 0, 0, 0))
 sns.heatmap(
     combined_matrix,
     annot=False,
     cmap=cool_warm_cmap,
-    linecolor='white', linewidths=2,
+    linecolor='white', linewidths=1,
     square=True,
     xticklabels=False, yticklabels=False,
     cbar=False,
+    ax=ax
 )
-plt.tight_layout()
-plt.savefig(f"{output_dir}/cortical_properties_combined.svg", bbox_inches='tight', dpi=300)
-plt.close()
+save_figure(fig, f"{output_dir}/cortical_properties_combined.svg")
+plt.close(fig)
 print(f"Saved: {output_dir}/cortical_properties_combined.svg")
 
 # ------------------------------------------------------------------------------------------------
 # --- Plot cortical similarity matrix ---
 # ------------------------------------------------------------------------------------------------
 
-plt.figure(figsize=(10, 8))
+fig, ax = setup_figure(width_mm=40, height_mm=40, margins_mm=(0, 0, 0, 0))
 sns.heatmap(
     cortical_similarity, 
     cmap=cool_warm_cmap, 
@@ -109,31 +107,30 @@ sns.heatmap(
     xticklabels=False, yticklabels=False,
     linecolor=None, linewidths=0,
     square=True,
-    cbar=False
+    cbar=False,
+    ax=ax
 )
-plt.tight_layout()
-plt.savefig(f'{output_dir}/cortical_similarity_matrix.svg', bbox_inches='tight', dpi=300)
-plt.close()
+save_figure(fig, f'{output_dir}/cortical_similarity_matrix.svg')
+plt.close(fig)
 print(f"Saved: {output_dir}/cortical_similarity_matrix.svg")
 
 # ------------------------------------------------------------------------------------------------
 # --- Create cortical similarity colorbar ---
 # ------------------------------------------------------------------------------------------------
 
-fig_cbar, ax_cbar = plt.subplots(figsize=(5, 0.4), dpi=300)
+fig_cbar, ax_cbar = setup_figure(width_mm=35, height_mm=13, margins_mm=(2, 2, 8, 2))
 sm = plt.cm.ScalarMappable(cmap=cool_warm_cmap)
 sm.set_clim(-1, 1)
 sm.set_array([])
 cbar = fig_cbar.colorbar(sm, cax=ax_cbar, orientation='horizontal')
-cbar.set_label('Cortical similarity', labelpad=8, fontsize=18)
+cbar.set_label('Cortical similarity', labelpad=4)
 cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
-cbar.ax.tick_params(labelsize=18)
+cbar.ax.tick_params(width=0.5, length=2)
 cbar.outline.set_visible(False)
-plt.tight_layout()
 
 out_cbar = f"{output_dir}/cortical_similarity_colorbar.svg"
-plt.savefig(out_cbar, bbox_inches='tight', dpi=300)
-plt.close()
+save_figure(fig_cbar, out_cbar)
+plt.close(fig_cbar)
 print(f"Saved: {out_cbar}")
 
 # ------------------------------------------------------------------------------------------------
@@ -145,8 +142,8 @@ conn_thresh = 0.5
 
 # Create masks once for efficiency
 n_regions = cortical_similarity.shape[0]
-upper_mask = np.triu(np.ones((n_regions, n_regions), dtype=bool), k=1)
-lower_mask = ~upper_mask
+# upper_mask = np.triu(np.ones((n_regions, n_regions), dtype=bool), k=1)
+# lower_mask = ~upper_mask
 
 for tract in tracts_for_maps:
     # Get regions connected to this tract
@@ -166,7 +163,7 @@ for tract in tracts_for_maps:
         connected_upper_mask = np.triu(np.ones((n_connected, n_connected), dtype=bool), k=1)
         connected_lower_mask = ~connected_upper_mask
         
-        plt.figure(figsize=(4.0, 4.0), dpi=300)
+        fig, ax = setup_figure(width_mm=16, height_mm=16, margins_mm=(0, 0, 0, 0))
         sns.heatmap(
             connected_similarity,
             mask=connected_lower_mask,
@@ -177,11 +174,11 @@ for tract in tracts_for_maps:
             cbar=False,
             linewidths=0,
             linecolor=None,
+            ax=ax
         )
-        plt.tight_layout()
-        out_path_connected = f"{output_dir}/tract_connected_only_{tract}.svg"
-        plt.savefig(out_path_connected, bbox_inches='tight', dpi=300)
-        plt.close()
+        out_path_connected = f"{output_dir}/region_similarity_upper_{tract}.svg"
+        save_figure(fig, out_path_connected)
+        plt.close(fig)
         print(f"Saved: {out_path_connected}")
     else:
         print(f"Tract {tract} has {n_connected} connected regions - skipping connected-only plot")
