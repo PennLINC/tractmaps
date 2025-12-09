@@ -1,0 +1,11 @@
+title: Anatomical White Matter Tracts Span the Cortical Hierarchy to Support Cognitive Diversity
+author: "Joëlle Bagautdinova"
+theme: minima
+#remote_theme: jekyll/minima
+plugins:
+  - jekyll-seo-tag
+
+url: "https://pennlinc.github.io"
+baseurl: "/tractmaps"
+header_pages:
+  - about.md
