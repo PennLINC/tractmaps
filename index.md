@@ -162,10 +162,7 @@ This project uses the following publicly available resources:
 First, raw data is used to prepare data derivatives that will be used in the analyses. 
 
 <aside>
-💡
-
-Code root: `code/data_prep`
-
+💡 **Code root:** `code/data_prep`
 </aside>
 
 - **Generate Glasser labels** (`label.gii` and `dlabel.nii`): Glasser gifti labels are be used for parcellation and visualization. The region labels from the [original file](https://balsa.wustl.edu/78X3) were ordered as right (1-180), then left (181-360). They are reindexed in `prep_glasser_labels.sh` to be consistent with other data used in analyses, where left hemisphere regions are indices 1-180, right hemisphere regions are indices 181-360. This script calls `remap_labels.sh`. Run this as:
@@ -204,10 +201,7 @@ These scripts generate all the data contained in the `data/derivatives` folder. 
 Plots for Figure 1 showing the input data structure for tract probabilities, cognitive terms, and cortical properties are generated in: 
 
 <aside>
-💡
-
-Path: `code/analysis/1_data_structure/` 
-
+💡 **Path:** `code/analysis/1_data_structure/`
 </aside>
 
 - `data_structure_plotting.py`  - plots the tract-to-region, cognitive terms, and biological properties matrices along with a few example maps shown on the cortical surface.
@@ -218,10 +212,7 @@ Path: `code/analysis/1_data_structure/`
 The association between the mean Euclidean distance and S-A range of tracts is examined in:
 
 <aside>
-💡
-
-Path: `code/2_spatial_embedding/`
-
+💡 **Path:** `code/2_spatial_embedding/`
 </aside>
 
 - `plot_tract_distances.py` - creates heatmaps of region coordinates and Euclidean distances with tract overlays.
@@ -239,10 +230,7 @@ Path: `code/2_spatial_embedding/`
 Partial least squares analysis to identify dominant patterns of covariance between cognitive terms and tracts is performed in:
 
 <aside>
-💡
-
-Path:`/code/3_pls/`
-
+💡 **Path:** `/code/3_pls/`
 </aside>
 
 - `pls_diagram.py` - generates plots with simulated data for the explanatory diagram.
@@ -254,10 +242,7 @@ Path:`/code/3_pls/`
 The cognitive term contributions are generated for each tract in:
 
 <aside>
-💡
-
-Path:`/code/4_functional_decoding/`
-
+💡 **Path:** `/code/4_functional_decoding/`
 </aside>
 
 Code:
@@ -270,10 +255,7 @@ Code:
 Tract gini coefficients of functional diversity and association with S-A range is done in:
 
 <aside>
-💡
-
-Path: `/code/5_functional_diversity`
-
+💡 **Path:** `/code/5_functional_diversity`
 </aside>
 
 Code: 
@@ -292,10 +274,7 @@ Code:
 The association between tract mean cortical similarity (based on neurobiological cortical features from neuromaps and BigBrain), S-A range and Gini coefficient of diversity is done in: 
 
 <aside>
-💡
-
-path: `analysis/6_cortical_similarity/`
-
+💡 **Path:** `analysis/6_cortical_similarity/`
 </aside>
 
 Code: 
@@ -318,10 +297,7 @@ This section performs individual-level age and cognition GAMs, as well as associ
 This first step happens on CUBIC: 
 
 <aside>
-💡
-
-CUBIC path: `/cbic/projects/tractmaps/code`
-
+💡 **CUBIC path:** `/cbic/projects/tractmaps/code`
 </aside>
 
 This code is also available in the repository, under `code/get_data`. First, pulling the data is done with scripts in the CUBIC project directory: 
@@ -339,10 +315,7 @@ This code is also available in the repository, under `code/get_data`. First, pul
 **Step 2: create participants-by-measures csvs for downstream analyses**
 
 <aside>
-💡
-
-local path: `analysis/7_individual_level`
-
+💡 **Local path:** `analysis/7_individual_level`
 </aside>
 
 - `group_level_tract_scalars_pnc.R` - saves a csv with FA values in `data/derivatives/individual_level_pnc/cleaned` . These will be used for final sample selection below. Note that it will take a while to load all subjects’ files.
@@ -352,10 +325,7 @@ local path: `analysis/7_individual_level`
 **Step 3: run GAMs**
 
 <aside>
-💡
-
-local path: `analysis/7_individual_level`
-
+💡 **Local path:** `analysis/7_individual_level`
 </aside>
 
 - `scpt_GAM_tractmaps_pnc.R` - runs GAMs on each tract to determine the relationship between tract FA and age, as well as cognition. This outputs partial R2 and FDR-corrected p-values in: `results/individual_level/`
@@ -364,10 +334,7 @@ local path: `analysis/7_individual_level`
 **Step 4: association between age effects, cognition effects, and tract properties**
 
 <aside>
-💡
-
-local path: `analysis/7_individual_level`
-
+💡 **Local path:** `analysis/7_individual_level`
 </aside>
 
 Code: 
