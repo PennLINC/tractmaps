@@ -126,6 +126,7 @@ ax.tick_params(width=0.3, length=2)
 # Add legend
 legend_elements = [
     plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='palevioletred', markersize=5, label='$\\it{{p}}$ < 0.05'),
+    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='darkgrey', markersize=5, label='$\\it{{p}}$ $\\geq$ 0.05'),
     plt.Line2D([0], [0], marker='s', color='w', markerfacecolor='white', markeredgecolor='gray', 
                markersize=5, markeredgewidth=0.3, label='spin null')
 ]

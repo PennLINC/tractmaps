@@ -819,14 +819,14 @@ def plot_correlation(x, y,
     # Increase left margin when significance_data is used to prevent y-axis label cutoff
     if colorbar == 'same_plot':
         if significance_data is not None:
-            margins_mm = (14, 10, 8, 4)  # left, right, bottom, top (increased left for y-label)
+            margins_mm = (14, 10, 8, 4)  # left, right, bottom, top 
         else:
-            margins_mm = (10, 10, 8, 4)  # left, right, bottom, top
+            margins_mm = (11, 10, 8, 4)  # left, right, bottom, top
     else:
         if significance_data is not None:
-            margins_mm = (14, 12, 10, 4)  # left, right, bottom, top (increased left for y-label)
+            margins_mm = (14, 12, 10, 4)  # left, right, bottom, top
         else:
-            margins_mm = (10, 12, 10, 4)  
+            margins_mm = (11, 12, 10, 4)  
     fig, ax = setup_figure(width_mm=width_mm, height_mm=height_mm, 
                                   margins_mm=margins_mm)
     

@@ -1022,7 +1022,7 @@ class TractVisualizer:
         
         try:
             # Run with a small timeout to make sure it has time to load the tracts
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=5)
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=8)
             if result.returncode == 0:
                 print(f"Successfully created visualization for {tract_label}: {output_image}")
                 

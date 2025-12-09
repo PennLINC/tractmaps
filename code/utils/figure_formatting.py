@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------------------------
 
 # This script contains utilities for formatting figures at an exact physical size (mm) 
-# with consistent styling.
+# with consistent styling (font size, font type, line width, etc.).
 
 # ------------------------------------------------------------------------------------------------
 # --- Load packages ---

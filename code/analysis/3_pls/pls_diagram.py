@@ -59,8 +59,8 @@ heatmap = sns.heatmap(regions_terms, annot=False, cmap=cool_warm_cmap,
 # Make colorbar narrower
 cbar = heatmap.collections[0].colorbar
 cbar_pos = cbar.ax.get_position()
-ax.set_xlabel('Cognitive terms')
-ax.set_ylabel('Regions')
+ax.set_xlabel('125 Cognitive terms')
+ax.set_ylabel('360 Regions')
 save_figure(fig, f'{results_dir}/terms_matrix.svg')
 plt.close(fig)
 
@@ -73,8 +73,8 @@ heatmap = sns.heatmap(regions_tracts, annot=False, cmap=tract_cmap,
 # Make colorbar narrower
 cbar = heatmap.collections[0].colorbar
 cbar_pos = cbar.ax.get_position()
-ax.set_xlabel('Tracts')
-ax.set_ylabel('Regions')
+ax.set_xlabel('26 Tracts')
+ax.set_ylabel('360 Regions')
 save_figure(fig, f'{results_dir}/tracts_matrix.svg')
 plt.close(fig)
 
@@ -88,8 +88,8 @@ heatmap = sns.heatmap(corrs, annot=False, cmap=cool_warm_cmap, center=0,
 # Make colorbar narrower
 cbar = heatmap.collections[0].colorbar
 cbar_pos = cbar.ax.get_position()
-ax.set_xlabel('Tracts')
-ax.set_ylabel('Terms')
+ax.set_xlabel('26 Tracts')
+ax.set_ylabel('125 Terms')
 save_figure(fig, f'{results_dir}/correlations.svg')
 plt.close(fig)
 
