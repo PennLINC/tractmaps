@@ -49,7 +49,7 @@ warm_cmap, _, _, _, _, bppy_cmap = tm_utils.make_colormaps()
 # ------------------------------------------------------------------------------------------------
 
 # Load tract information and S-A ranges
-tract_types = pd.read_excel(f'{root_dir}/data/raw/tract_names/abbreviations.xlsx')
+tract_types = pd.read_excel(f'{root_dir}/data/derivatives/tract_names/abbreviations.xlsx')
 
 # Load S-A ranges
 sa_ranges_df = pd.read_csv(f'{root_dir}/data/derivatives/tracts/tracts_sa_axis/tract_sa_axis_ranges_thresh{int(connection_threshold * 100)}.csv')

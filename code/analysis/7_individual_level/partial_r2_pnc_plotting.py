@@ -51,7 +51,7 @@ plt.rcParams.update({'font.size': 18})
 # ------------------------------------------------------------------------------------------------
 
 # Load tract abbreviations for display names
-tract_names = pd.read_excel(f'{root}/data/raw/tract_names/abbreviations.xlsx')
+tract_names = pd.read_excel(f'{root}/data/derivatives/tract_names/abbreviations.xlsx')
 
 # Load tract gini term scores
 gini_scores = pd.read_csv(f"{root}/results/tract_functional_diversity/gini_coefficients/tract_gini_term_scores.csv")

@@ -626,7 +626,7 @@ class TractVisualizer:
 
     def _load_abbreviations(self) -> pd.DataFrame:
         """Load tract abbreviations from Excel file."""
-        abbrev_path = f'{self.root_dir}/data/raw/tract_names/abbreviations.xlsx'
+        abbrev_path = f'{self.root_dir}/data/derivatives/tract_names/abbreviations.xlsx'
         if os.path.exists(abbrev_path):
             return pd.read_excel(abbrev_path)
         else:

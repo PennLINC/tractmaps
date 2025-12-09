@@ -67,7 +67,7 @@ print(f"Loaded data for {len(tract_order)} tracts")
 
 
 # Load the abbreviations.xlsx file
-abbreviations_path = os.path.join(root_dir, 'data/raw/tract_names/abbreviations.xlsx')
+abbreviations_path = os.path.join(root_dir, 'data/derivatives/tract_names/abbreviations.xlsx')
 abbreviations_df = pd.read_excel(abbreviations_path)
 # Remove "Segment" (case-insensitive), capitalize only first letter, preserve I/II/III
 def format_pretty_name(name):

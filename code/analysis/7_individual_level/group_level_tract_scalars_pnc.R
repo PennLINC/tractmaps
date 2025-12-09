@@ -82,7 +82,7 @@ save(all_data, file = file.path(output_dir, "all_data_pnc.RData"))
 
 # Load tract abbreviations
 cat("\nLoading tract abbreviations...\n")
-tract_abbreviations <- readxl::read_excel("/Users/joelleba/PennLINC/tractmaps/data/raw/tract_names/abbreviations.xlsx")
+tract_abbreviations <- readxl::read_excel("/Users/joelleba/PennLINC/tractmaps/data/derivatives/tract_names/abbreviations.xlsx")
 print(paste("Loaded", nrow(tract_abbreviations), "tract abbreviations"))
 
 # Get unique tract names from all_data

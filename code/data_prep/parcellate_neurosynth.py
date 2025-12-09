@@ -53,7 +53,7 @@ parc_dir = f'{root}/data/derivatives/neurosynth_annotations/'
 ma_images = ['z_desc-association']
 
 # Load configuration for email address
-config_path = f'{root}/code/data_prep/parcellate_neurosynth_config.yaml'
+config_path = f'{root}/code_pennlinc_repo/code/data_prep/parcellate_neurosynth_config.yaml'
 with open(config_path, 'r') as f:
     config = yaml.safe_load(f)
 

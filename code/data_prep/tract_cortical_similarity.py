@@ -50,7 +50,7 @@ data = pd.read_csv(f'{root_dir}/data/derivatives/cortical_annotations/glasser/gl
 tractdata = data.filter(regex = 'left|right')
 
 # Load tract names
-abbrev_dir = f'{root_dir}/data/raw/tract_names'
+abbrev_dir = f'{root_dir}/data/derivatives/tract_names'
 tract_names = pd.read_excel(f'{abbrev_dir}/abbreviations.xlsx')[['Tract', 'Abbreviation', 'Tract_Long_Name', 'new_qsirecon_tract_names', 'Hemisphere', 'Type']]
 tract_names.rename(columns={'new_qsirecon_tract_names': 'bundle_name'}, inplace=True) 
 

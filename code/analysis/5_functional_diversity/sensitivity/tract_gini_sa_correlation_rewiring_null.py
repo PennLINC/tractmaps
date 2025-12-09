@@ -92,7 +92,7 @@ full_data = pd.read_csv(data_file_path, index_col=0)
 print(f"Loaded full dataset with {full_data.shape[0]} regions and {full_data.shape[1]} columns")
 
 # Load tract name mapping
-tract_names_df = pd.read_excel(os.path.join(root, 'data/raw/tract_names/abbreviations.xlsx'))
+tract_names_df = pd.read_excel(os.path.join(root, 'data/derivatives/tract_names/abbreviations.xlsx'))
 tract_name_mapping = dict(zip(tract_names_df['Tract'], tract_names_df['Tract_Long_Name']))
 
 # ------------------------------------------------------------------------------------------------

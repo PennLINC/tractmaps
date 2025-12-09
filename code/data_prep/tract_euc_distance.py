@@ -24,7 +24,7 @@ from utils.matrix_to_tracts import extract_tract_means_from_matrix
 # ------------------------------------------------------------------------------------------------
 
 root = '/Users/joelleba/PennLINC/tractmaps/data'
-abbrev_dir = f'{root}/raw/tract_names'
+abbrev_dir = f'{root}/derivatives/tract_names'
 derivatives_root = f'{root}/derivatives'
 
 # Define tract-to-region connection threshold

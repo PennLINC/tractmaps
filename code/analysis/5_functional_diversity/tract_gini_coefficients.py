@@ -49,7 +49,7 @@ term_contrib_df = pd.read_csv(term_contrib_path, index_col=0)
 print(f"Loaded term contributions for {term_contrib_df.shape[1]} tracts and {term_contrib_df.shape[0]} terms")
 
 # Load tract name mapping
-tract_names_df = pd.read_excel(os.path.join(root_dir, 'data/raw/tract_names/abbreviations.xlsx'))
+tract_names_df = pd.read_excel(os.path.join(root_dir, 'data/derivatives/tract_names/abbreviations.xlsx'))
 tract_name_mapping = dict(zip(tract_names_df['Tract'], tract_names_df['Tract_Long_Name']))
 
 # ------------------------------------------------------------------------------------------------

@@ -18,7 +18,7 @@ import brainsmash.workbench as wb
 # ------------------------------------------------------------------------------------------------
 # --- Set up inputs ---
 root = '/Users/joelleba/PennLINC/tractmaps/data'
-abbrev_dir = f'{root}/raw/tract_names'
+abbrev_dir = f'{root}/derivatives/tract_names'
 derivatives_root = f'{root}/derivatives'
 
 # Define tract-to-region connection threshold

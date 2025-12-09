@@ -52,7 +52,7 @@ print("Using Gini coefficients for tract type sensitivity analysis")
 # ------------------------------------------------------------------------------------------------
 
 # Load tract names
-tract_types = pd.read_excel(f'{root_dir}/data/raw/tract_names/abbreviations.xlsx')
+tract_types = pd.read_excel(f'{root_dir}/data/derivatives/tract_names/abbreviations.xlsx')
 
 # Load Gini coefficients
 tract_diversity_score = 'Gini_Coefficient'
