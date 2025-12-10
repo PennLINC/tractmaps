@@ -240,7 +240,7 @@ The cognitive term contributions are generated for each tract in:
 
 Code:
 
-- `tract_term_contributions.py` - calculates the cognitive term contributions for each tract as a terms x tracts matrix containing the mean of normalized s-crores (across connected regions) per tract. Term z-scores are normalized using `scaled_robust_sigmoid` (to handle extreme values in a subset of terms, which can bias Gini coefficients) and thresholded at >1.64.
+- `tract_term_contributions.py` - calculates the cognitive term contributions for each tract as a terms x tracts matrix containing the mean of normalized z-scores (across connected regions) per tract. Term z-scores are normalized using `scaled_robust_sigmoid` (to handle extreme values in a subset of terms) and thresholded at >1.64.
 - `tract_cog_functions_plotting.py` - visualizes the tract-term association results (barplots for terms and categories, as well as word clouds)
 
 ### Tract functional diversity (Figure 5)
@@ -305,13 +305,13 @@ This code is also available in the repository, under `code/get_data`. First, pul
 
 - `group_level_tract_scalars_pnc.R` - saves a csv with FA values in `data/derivatives/individual_level_pnc/cleaned` . These will be used for final sample selection below. Note that it will take a while to load all subjects’ files.
 - `group_level_qc_measures_pnc.R` - generates a csv with dMRI QC measures. This also takes a while.
-- `sample_creation_pnc.py` - applies data exclusion as done in Audrey’s [paper](https://github.com/PennLINC/luo_wm_dev/blob/main/code/sample_construction/construct_initial_sample/PNC_InitialSampleSelection.Rmd). This outputs a final sample csv in `data/derivatives/individual_level_pnc/final_sample` . This will be used in downstream analyses.
+- `sample_creation_pnc.py` - applies data exclusion as done in - applies data exclusion as done in [Luo et al., 2025](https://doi.org/10.1101/2025.03.19.644049). This outputs a final sample csv in `data/derivatives/individual_level_pnc/final_sample` . This will be used in downstream analyses.
 
 **Step 3: run GAMs**
 
 ➡️ **Local path:** `analysis/7_individual_level`
 
-- `scpt_GAM_tractmaps_pnc.R` - runs GAMs on each tract to determine the relationship between tract FA and age, as well as cognition. This outputs partial R2 and FDR-corrected p-values in: `results/individual_level/`
+- `scpt_GAM_tractmaps_pnc.R` - runs GAMs on each tract to determine the relationship between tract FA and age, as well as cognition. This outputs partial R² and FDR-corrected p-values in: `results/individual_level/`
 - `func_GAM_tractmaps.R` - is called by `scpt_GAM_tractmaps_pnc.R` to fit the GAMs.
 
 **Step 4: association between age effects, cognition effects, and tract properties**
@@ -329,7 +329,7 @@ Et voilà! 😊
 The repository also contains some utility functions in the `code/utils` folder. These get called throughout the data preparation and analyses steps. Here is a brief description: 
 
 - `figure_formatting.py` - takes care of formatting all figures generated in the manuscript, e.g. ensuring consistent font size, font type, etc.
-- `matrix_to_tracts.py` - function that extracts pairwise values from any inter-regional matrix.
+- `matrix_to_tracts.py` - function that extracts pairwise values for regions connected to tracts from any inter-regional matrix, and computes tract means.
 - `tm_utils.py` - contains functions for loading and saving data; plotting brain maps on brain surfaces; and plotting correlations along with permutation testing.
 - `tract_visualizer.py` - code to plot tracts in glass brains using DSI studio (through the command line). This can plot tracts all together or separately in a glass brain, can take specific color inputs or color gradients based on an continuous tract metric (ex: tract S-A range), and can save tracts in different layouts (medial, lateral, grid of tracts, etc.). Note that it requires access to tract trk files for plotting (for instance, this project used publicly available trk files at [https://github.com/data-others/atlas/releases/download/hcp1065/hcp1065_avg_tracts_trk.zip](https://github.com/data-others/atlas/releases/download/hcp1065/hcp1065_avg_tracts_trk.zip)). It also requires the `abbreviations.xlsx` for tract name mapping.
 - `tract_visualizer_quickstart.py` - contains a few examples illustrating how to use `tract_visualizer.py` to plot tracts.
