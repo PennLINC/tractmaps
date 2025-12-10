@@ -193,7 +193,7 @@ First, raw data is used to prepare data derivatives that will be used in the ana
 - **Regional nulls (spin-based)**: Spin-based nulls (for Partial Least Squares analysis) are generated in`compute_nulls.py`. Note: this will take a little while to run. This will output 10,000 null indices for Glasser regions.
 - **Network rewiring nulls (sensitivity analysis)**: Tract rewiring nulls are generated in`tract_rewiring_nulls.py`. Note: this will take a little while to run. This will output 10,000 dataframes containing tract probabilities for rewired null tracts, saved in a pkl.
 
-These scripts generate all the data contained in the `data/derivatives` folder. In addition, this folder contains an excel file with tract names and abbreviations called `abbreviations.xlsx`, which was adapted from [https://github.com/data-others/atlas/releases/download/hcp1065/abbreviation2.xlsx](https://github.com/data-others/atlas/releases/download/hcp1065/abbreviation2.xlsx). The data in the `data/derivatives` folder can be used to run the analyses and generate the manuscript figures below. 
+These scripts generate all the data contained in the `data/derivatives` folder. In addition, this folder contains an excel file with tract names and abbreviations called `abbreviations.xlsx`, which was adapted from [https://github.com/data-others/atlas/releases/download/hcp1065/abbreviation2.xlsx](https://github.com/data-others/atlas/releases/download/hcp1065/abbreviation2.xlsx) available on the DSI studio website at [https://brain.labsolver.org/hcp_trk_atlas.html](https://brain.labsolver.org/hcp_trk_atlas.html). The data in the `data/derivatives` folder can be used to run the analyses and generate the manuscript figures below. 
 
 ## Analysis
 
