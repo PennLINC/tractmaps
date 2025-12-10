@@ -150,7 +150,8 @@ bash build_environment.sh
 
 This project uses the following publicly available resources:
 
-- The original HCP-MMP parcellation dlabel.nii from [https://balsa.wustl.edu/78X3](https://balsa.wustl.edu/78X3)
+- The original HCP-MMP parcellation dlabel.nii from [https://balsa[.wustl.edu/78X3](https://balsa.wustl.edu/78X3)
+- HCP-MMP region labels and coordinates (full description based on supplemental files of the [Glasser et al., 2016](https://doi.org/10.1038/nature18933) paper) made available at [https://neuroimaging-core-docs.readthedocs.io/en/latest/pages/atlases.html#how-to-download-and-install-additional-fsl-atlases](https://neuroimaging-core-docs.readthedocs.io/en/latest/pages/atlases.html#how-to-download-and-install-additional-fsl-atlases)
 - Tract-to-region probability matrix from [Yeh 2022, Nature Methods](https://www.nature.com/articles/s41467-022-32595-4)
 - Tract trk files (for tract visualization purposes) from [https://github.com/frankyeh/data-atlas/releases/download/hcp1065/hcp1065_avg_tracts_trk.zip](https://github.com/frankyeh/data-atlas/releases/download/hcp1065/hcp1065_avg_tracts_trk.zip) listed on this page [https://brain.labsolver.org/hcp_trk_atlas.html](https://brain.labsolver.org/hcp_trk_atlas.html).
 - The HCP-YA 1065 1-mm population-averaged FIB file in the ICBM152 space (also for tract visualization): [https://pitt-my.sharepoint.com/:u:/g/personal/yehfc_pitt_edu/EVqdp-lm0_NCgsFkSNDZeP0Bb3PpiSJRGpOKFhvVgZihVQ?e=GhUuOc](https://pitt-my.sharepoint.com/:u:/g/personal/yehfc_pitt_edu/EVqdp-lm0_NCgsFkSNDZeP0Bb3PpiSJRGpOKFhvVgZihVQ?e=GhUuOc) provided on this page: [https://brain.labsolver.org/hcp_template.html](https://brain.labsolver.org/hcp_template.html)
@@ -165,7 +166,7 @@ First, raw data is used to prepare data derivatives that will be used in the ana
 
 ➡️ **Code path:** `code/data_prep`
 
-- **Generate Glasser labels** (`label.gii` and `dlabel.nii`): Glasser gifti labels are be used for parcellation and visualization. The region labels from the [original file](https://balsa.wustl.edu/78X3) were ordered as right (1-180), then left (181-360). They are reindexed in `prep_glasser_labels.sh` to be consistent with other data used in analyses, where left hemisphere regions are indices 1-180, right hemisphere regions are indices 181-360. This script calls `remap_labels.sh`. Run this as:
+- **Generate Glasser labels** (`label.gii` and `dlabel.nii`): Glasser gifti labels are used for parcellation and visualization. The region labels from the [original file](https://balsa.wustl.edu/78X3) were ordered as right (1-180), then left (181-360). They are reindexed in `prep_glasser_labels.sh` to be consistent with other data used in analyses, where left hemisphere regions are indices 1-180, right hemisphere regions are indices 181-360. This script calls `remap_labels.sh`. Run this as:
     
     ```bash
     cd /Users/joelleba/tractmaps/code/data_prep
@@ -174,7 +175,7 @@ First, raw data is used to prepare data derivatives that will be used in the ana
     
 - **Create the tract-to-region probabilities dataframe:** the tract-to-region probabilities and region names are reformatted for analysis in `prep_tract_probabilities.py`
 - **Regional coordinates**: the x-y-z coordinates of Glasser regions are generated in `prep_glasser_coords.py`
-- **Cognitive terms dataframe**: Cognitive maps from neurosynth are obtained using the NiMARE module and parcellated in Glasser regions using `parcellate_neurosynth.py`. Note: for this script to run, first create a yaml file containing your email address:
+- **Cognitive terms dataframe**: Cognitive maps from neurosynth are obtained using the [NiMARE](https://nimare.readthedocs.io/en/stable/) package and parcellated in Glasser regions using `parcellate_neurosynth.py`. Note: for this script to run, first create a yaml file containing your email address:
     
     ```yaml
     # Configuration file for neurosynth data preparation
@@ -186,13 +187,13 @@ First, raw data is used to prepare data derivatives that will be used in the ana
     
 - **Biological cortical properties dataframe**: The cortical maps used in the project are obtained through neuromaps and BigBrain, then parcellated in `parcellate_neuromaps.py`
 - **Euclidean distances**: Regional pairwise Euclidean distances, as well as tract mean Euclidean distance, are generated in `tract_euc_distance.py`
-- **Geodesic distance (sensitivity analysis)**: Regional Geodesic distances, as well as tract mean geodesic distance, are generated in `tract_geodesic_distance.py`Note that this script takes a little while to run.
+- **Geodesic distance (sensitivity analysis)**: Regional Geodesic distances, as well as tract mean geodesic distance, are generated in `tract_geodesic_distance.py`. Note that this script takes a little while to run.
 - **Sensorimotor-to-association axis**: Tract S-A axis ranges are generated in `prep_sa_axis.py`
 - **Tract biological cortical similarity**: The cortical similarity of tracts based on neurobiological (neuromaps) properties is generated in `tract_cortical_similarity.py`
-- **Regional nulls (spin-based)**: Spin-based nulls (for Partial Least Squares analysis) are generated in`compute_nulls.py`Note: this will take a little while to run. This will output 10,000 null indices for Glasser regions.
+- **Regional nulls (spin-based)**: Spin-based nulls (for Partial Least Squares analysis) are generated in`compute_nulls.py`. Note: this will take a little while to run. This will output 10,000 null indices for Glasser regions.
 - **Network rewiring nulls (sensitivity analysis)**: Tract rewiring nulls are generated in`tract_rewiring_nulls.py`. Note: this will take a little while to run. This will output 10,000 dataframes containing tract probabilities for rewired null tracts, saved in a pkl.
 
-These scripts generate all the data contained in the `data/derivatives` folder. This data can be used to run the analyses and generate the manuscript figures below. 
+These scripts generate all the data contained in the `data/derivatives` folder. In addition, this folder contains an excel file with tract names and abbreviations called `abbreviations.xlsx`, which was adapted from [https://github.com/data-others/atlas/releases/download/hcp1065/abbreviation2.xlsx](https://github.com/data-others/atlas/releases/download/hcp1065/abbreviation2.xlsx). The data in the `data/derivatives` folder can be used to run the analyses and generate the manuscript figures below. 
 
 ## Analysis
 
