@@ -152,9 +152,12 @@ This project uses the following publicly available resources:
 
 - The original HCP-MMP parcellation dlabel.nii from [https://balsa.wustl.edu/78X3](https://balsa.wustl.edu/78X3)
 - Tract-to-region probability matrix from [Yeh 2022, Nature Methods](https://www.nature.com/articles/s41467-022-32595-4)
-- Tract probability volumes from [https://github.com/frankyeh/data-atlas/releases/download/hcp1065/hcp1065_prob_coverage_nifti.zip](https://github.com/frankyeh/data-atlas/releases/download/hcp1065/hcp1065_prob_coverage_nifti.zip) listed on the dsi studio website: [https://brain.labsolver.org/hcp_trk_atlas.html](https://brain.labsolver.org/hcp_trk_atlas.html)
+- Tract trk files (for tract visualization purposes) from [https://github.com/frankyeh/data-atlas/releases/download/hcp1065/hcp1065_avg_tracts_trk.zip](https://github.com/frankyeh/data-atlas/releases/download/hcp1065/hcp1065_avg_tracts_trk.zip) listed on this page [https://brain.labsolver.org/hcp_trk_atlas.html](https://brain.labsolver.org/hcp_trk_atlas.html).
+- The HCP-YA 1065 1-mm population-averaged FIB file in the ICBM152 space (also for tract visualization): [https://pitt-my.sharepoint.com/:u:/g/personal/yehfc_pitt_edu/EVqdp-lm0_NCgsFkSNDZeP0Bb3PpiSJRGpOKFhvVgZihVQ?e=GhUuOc](https://pitt-my.sharepoint.com/:u:/g/personal/yehfc_pitt_edu/EVqdp-lm0_NCgsFkSNDZeP0Bb3PpiSJRGpOKFhvVgZihVQ?e=GhUuOc) provided on this page: [https://brain.labsolver.org/hcp_template.html](https://brain.labsolver.org/hcp_template.html)
 - Tract names and abbreviations : `data/derivatives/tract_names/abbreviations.xlsx` taken and adjusted from [https://github.com/data-others/atlas/releases/download/hcp1065/abbreviation2.xlsx](https://github.com/data-others/atlas/releases/download/hcp1065/abbreviation2.xlsx)
 - S-A axis ranks, glasser parcellated from [https://github.com/PennLINC/S-A_ArchetypalAxis/tree/main/Glasser360_MMP](https://github.com/PennLINC/S-A_ArchetypalAxis/tree/main/Glasser360_MMP)
+
+This data can be downloaded and placed into relevant subfolders in `data/raw`. Cognitive terms and biological properties are pulled directly using python packages. 
 
 ## Data preparation
 
