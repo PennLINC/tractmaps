@@ -3,15 +3,14 @@ layout: page
 title: Reproducibility Guide
 ---
 
-# Reproducibility guide
 
 The entire analytic workflow implemented in this project is described in the following sections. This workflow includes data preparation and analyses included in the manuscript. Scripts should be run in the order outlined below.
 
 # Table of contents
 
-- [I. Project information](#i-project-information)
-- [II. Directory structure](#ii-directory-structure)
-- [III. Code documentation](#iii-code-documentation)
+- [I. Project information](#project-information)
+- [II. Directory structure](#directory-structure)
+- [III. Code documentation](#code-documentation)
   - [Overview of the analytic workflow](#overview-of-the-analytic-workflow)
   - [Project software](#project-software)
     - [Connectome workbench](#connectome-workbench)
@@ -161,7 +160,7 @@ This project uses the following publicly available resources:
 
 First, raw data is used to prepare data derivatives that will be used in the analyses. 
 
-**Code root:** `code/data_prep`
+➡️ **Code path:** `code/data_prep`
 
 - **Generate Glasser labels** (`label.gii` and `dlabel.nii`): Glasser gifti labels are be used for parcellation and visualization. The region labels from the [original file](https://balsa.wustl.edu/78X3) were ordered as right (1-180), then left (181-360). They are reindexed in `prep_glasser_labels.sh` to be consistent with other data used in analyses, where left hemisphere regions are indices 1-180, right hemisphere regions are indices 181-360. This script calls `remap_labels.sh`. Run this as:
     
@@ -198,7 +197,7 @@ These scripts generate all the data contained in the `data/derivatives` folder. 
 
 Plots for Figure 1 showing the input data structure for tract probabilities, cognitive terms, and cortical properties are generated in: 
 
-**Path:** `code/analysis/1_data_structure/`
+➡️ **Path:** `code/analysis/1_data_structure/`
 
 - `data_structure_plotting.py`  - plots the tract-to-region, cognitive terms, and biological properties matrices along with a few example maps shown on the cortical surface.
 - `tracts_vis_table_1.py` - generates tract visualizations in glass brains for Table 1.
@@ -207,7 +206,7 @@ Plots for Figure 1 showing the input data structure for tract probabilities, cog
 
 The association between the mean Euclidean distance and S-A range of tracts is examined in:
 
-**Path:** `code/2_spatial_embedding/`
+➡️ **Path:** `code/2_spatial_embedding/`
 
 - `plot_tract_distances.py` - creates heatmaps of region coordinates and Euclidean distances with tract overlays.
 - `plot_example_tract_sa_ranks.py` - plots the full S-A axis and the S-A ranks of example tracts on the brain surface.
@@ -223,7 +222,7 @@ The association between the mean Euclidean distance and S-A range of tracts is e
 
 Partial least squares analysis to identify dominant patterns of covariance between cognitive terms and tracts is performed in:
 
-**Path:** `/code/3_pls/`
+➡️ **Path:** `/code/3_pls/`
 
 - `pls_diagram.py` - generates plots with simulated data for the explanatory diagram.
 - `pls_terms_tracts.py` - performs the PLS analysis. Note that the significance testing and cross-validation performed here takes a while to run.
@@ -233,7 +232,7 @@ Partial least squares analysis to identify dominant patterns of covariance betwe
 
 The cognitive term contributions are generated for each tract in:
 
-**Path:** `/code/4_functional_decoding/`
+➡️ **Path:** `/code/4_functional_decoding/`
 
 Code:
 
@@ -244,7 +243,7 @@ Code:
 
 Tract gini coefficients of functional diversity and association with S-A range is done in:
 
-**Path:** `/code/5_functional_diversity`
+➡️ **Path:** `/code/5_functional_diversity`
 
 Code: 
 
@@ -261,7 +260,7 @@ Code:
 
 The association between tract mean cortical similarity (based on neurobiological cortical features from neuromaps and BigBrain), S-A range and Gini coefficient of diversity is done in: 
 
-**Path:** `analysis/6_cortical_similarity/`
+➡️ **Path:** `analysis/6_cortical_similarity/`
 
 Code: 
 
@@ -282,7 +281,7 @@ This section performs individual-level age and cognition GAMs, as well as associ
 
 This first step happens on CUBIC: 
 
-**CUBIC path:** `/cbic/projects/tractmaps/code`
+➡️ **CUBIC path:** `/cbic/projects/tractmaps/code`
 
 This code is also available in the repository, under `code/get_data`. First, pulling the data is done with scripts in the CUBIC project directory: 
 
@@ -298,7 +297,7 @@ This code is also available in the repository, under `code/get_data`. First, pul
 
 **Step 2: create participants-by-measures csvs for downstream analyses**
 
-**Local path:** `analysis/7_individual_level`
+➡️ **Local path:** `analysis/7_individual_level`
 
 - `group_level_tract_scalars_pnc.R` - saves a csv with FA values in `data/derivatives/individual_level_pnc/cleaned` . These will be used for final sample selection below. Note that it will take a while to load all subjects’ files.
 - `group_level_qc_measures_pnc.R` - generates a csv with dMRI QC measures. This also takes a while.
@@ -306,14 +305,14 @@ This code is also available in the repository, under `code/get_data`. First, pul
 
 **Step 3: run GAMs**
 
-**Local path:** `analysis/7_individual_level`
+➡️ **Local path:** `analysis/7_individual_level`
 
 - `scpt_GAM_tractmaps_pnc.R` - runs GAMs on each tract to determine the relationship between tract FA and age, as well as cognition. This outputs partial R2 and FDR-corrected p-values in: `results/individual_level/`
 - `func_GAM_tractmaps.R` - is called by `scpt_GAM_tractmaps_pnc.R` to fit the GAMs.
 
 **Step 4: association between age effects, cognition effects, and tract properties**
 
-**Local path:** `analysis/7_individual_level`
+➡️ **Local path:** `analysis/7_individual_level`
 
 Code: 
 
