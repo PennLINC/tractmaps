@@ -895,7 +895,7 @@ def plot_correlation(x, y,
     # Use font size from rcParams (set by setup_figure)
     # Use label_pt size for text annotations
     fontsize = plt.rcParams.get('axes.labelsize', 7) # default font size is 7pt
-    ax.text(x_pos, y_pos, f'$\\it{{r}}$ = {corr_value:.3f}\n{p_text}',
+    ax.text(x_pos, y_pos, f'$r_s$ = {corr_value:.3f}\n{p_text}',
             transform=ax.transAxes, fontsize=fontsize,
             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', 
                      edgecolor='0.7', linewidth=0.5, alpha=0.9),
