@@ -308,7 +308,7 @@ This code is also available in the repository, under `code/get_data`. First, pul
 - `sample_creation_<dataset>.py` - applies data exclusion. This outputs a final sample csv in `data/<dataset>/derivatives/final_sample`. This will be used in downstream analyses.
 - ONLY for HBN: `harmonize_hbn.R` - applies harmonization; this is done for HBN as it's a multisite study.
 - `run_gams_<dataset>.R` - runs GAMs on each tract to determine the relationship between tract microstructure and age. This outputs partial R² and FDR-corrected p-values in: `results/individual_level/<dataset>`.
-- `func_GAM_tractmaps.R` - is called by `scpt_GAM_tractmaps_<dataset>.R` to fit the GAMs.
+- `func_GAM_tractmaps.R` - is called by `run_gams_<dataset>.R` to fit the GAMs.
 
 **Step 3: age partial R² vs tract properties**
 
@@ -338,7 +338,7 @@ This code is also available in the repository, under `code/get_data`. First, pul
 - `create_group_level_<dataset>.R` - saves a group csv for each microstructure measure in `data/<dataset>/derivatives/cleaned`. These will be used for final sample selection below. Note that it will take a while to load all subjects’ files.
 - `sample_creation_<dataset>.py` - applies data exclusion. This outputs a final sample csv in `data/<dataset>/derivatives/final_sample`. This will be used in downstream analyses.
 - `run_gams_<dataset>.R` - runs GAMs on each tract to determine the relationship between tract microstructure and cognition. This outputs partial R² and FDR-corrected p-values in: `results/individual_level/<dataset>`.
-- `func_GAM_tractmaps.R` - is called by `scpt_GAM_tractmaps_<dataset>.R` to fit the GAMs.
+- `func_GAM_tractmaps.R` - is called by `run_gams_<dataset>.R` to fit the GAMs.
 
 **Step 3: cognition partial R² vs tract properties**
 
