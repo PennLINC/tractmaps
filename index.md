@@ -277,50 +277,74 @@ Code:
 - `gini_cortical_similarity_rewiring_null.py` - significance testing for the correlation between tract mean cortical similarity and Gini coefficients using tract rewiring (takes some time).
 - `sa_range_cortical_similarity_rewiring_null.py` - significance testing for the correlation between tract mean cortical similarity and Gini coefficients using tract rewiring (takes some time).
 
-### Individual-level analysis (Figure 7)
+### Individual-level analysis — age effects (Figure 7)
 
-This section performs individual-level age and cognition GAMs, as well as associations with tract S-A range and Gini coefficients. 
+This section runs individual-level **age** GAMs, then tests associations between tract-wise age partial R² and tract functional properties (Gini coefficient, S–A range). This is done:
 
-**Step 1: pull qsirecon data on CUBIC**
+* for two datasets: the Philadelphia Neurodevelopmental Cohort (PNC) and the Healthy Brain Network (HBN)
+* for two DWI metrics: Fractional Anisotropy (FA) and Mean Diffusivity (MD)
+* A third microstructural measure, Intracellular Volume Fraction (ICVF) is additionally evaluated in HBN
+
+**Step 1: pull data on CUBIC**
 
 This first step happens on CUBIC: 
-
 ➡️ **CUBIC path:** `/cbic/projects/tractmaps/code`
 
-This code is also available in the repository, under `code/get_data`. First, pulling the data is done with scripts in the CUBIC project directory: 
+This code is also available in the repository, under `code/get_data`. First, pulling the data is done with scripts in the CUBIC project directory. Run these in order for each dataset (PNC, HBN):
 
-- `get_subjects_list.sh` - lists all the subjects with qsirecon data. This saves out a text file in the same directory: `pnc_subject_list.txt`, which will be needed in the next scripts.
-- `unzip_files.sh` - code that unzips all participant files. Thanks to Tien Tong for providing this script!
-- `run_unzip_pnc_cubic.sh` - contains the file pattern and subject list for file file extraction. This script calls `unzip_files.sh` to actually extract the files. Heads up: this takes a little while. Run it with:
-    
+- `get_subjects_list_<dataset>.sh` - lists all the subjects with qsirecon data. This saves out a text file in the same directory: `<dataset>_subject_list.txt`, which will be needed in the next scripts.
+- `run_unzip_<dataset>_cubic.sh` - contains the file pattern and subject list for file file extraction. This script calls `unzip_files.sh` to actually extract the files. Thanks to Tien Tong for providing this script! Heads up: this takes a little while. Run it with:
     ```bash
-    bash run_unzip_pnc_cubic.sh
+    bash run_unzip_<dataset>_cubic.sh
     ```
-    
-- `check_subjects.sh`  - finds which subjects where in the original `pnc_subject_list.txt` (aka, they have a qsirecon zip file), but don’t have a tsv output file. This should be 0 (all were unzipped correctly).
+-`check_subjects_<dataset>.sh`  - finds which subjects where in the original `<dataset>_subject_list.txt` (aka, they have a qsirecon zip file), but don’t have a tsv output file. This should be 0 (all were unzipped correctly).
 
-**Step 2: create participants-by-measures csvs for downstream analyses**
+**Step 2: create sample and run age GAMs**
 
-➡️ **Local path:** `analysis/7_individual_level`
+➡️ Local path: **`analysis/7_individual_level/<dataset>`**
 
-- `group_level_tract_scalars_pnc.R` - saves a csv with FA values in `data/derivatives/individual_level_pnc/cleaned` . These will be used for final sample selection below. Note that it will take a while to load all subjects’ files.
-- `group_level_qc_measures_pnc.R` - generates a csv with dMRI QC measures. This also takes a while.
-- `sample_creation_pnc.py` - applies data exclusion as done in - applies data exclusion as done in [Luo et al., 2025](https://doi.org/10.1101/2025.03.19.644049). This outputs a final sample csv in `data/derivatives/individual_level_pnc/final_sample` . This will be used in downstream analyses.
+- `create_group_level_<dataset>.R` - saves a group csv for each microstructure measure in `data/<dataset>/derivatives/cleaned`. These will be used for final sample selection below. Note that it will take a while to load all subjects’ files.
+- `sample_creation_<dataset>.py` - applies data exclusion. This outputs a final sample csv in `data/<dataset>/derivatives/final_sample`. This will be used in downstream analyses.
+- ONLY for HBN: `harmonize_hbn.R` - applies harmonization; this is done for HBN as it's a multisite study.
+- `run_gams_<dataset>.R` - runs GAMs on each tract to determine the relationship between tract microstructure and age. This outputs partial R² and FDR-corrected p-values in: `results/individual_level/<dataset>`.
+- `func_GAM_tractmaps.R` - is called by `scpt_GAM_tractmaps_<dataset>.R` to fit the GAMs.
 
-**Step 3: run GAMs**
+**Step 3: age partial R² vs tract properties**
 
-➡️ **Local path:** `analysis/7_individual_level`
+➡️ **`analysis/7_individual_level`**
 
-- `scpt_GAM_tractmaps_pnc.R` - runs GAMs on each tract to determine the relationship between tract FA and age, as well as cognition. This outputs partial R² and FDR-corrected p-values in: `results/individual_level/`
-- `func_GAM_tractmaps.R` - is called by `scpt_GAM_tractmaps_pnc.R` to fit the GAMs.
+- `run_partial_r2_age_effects.py` — driver for combining PNC and HBN age-effect tables versus tract properties (writes combined tables and figures under `results/individual_level/age_effects/`).
+- `test_partial_r2_tract_properties.py` — is called by `run_partial_r2_age_effects.py` to run correlations and permutation tests; also contains plotting utilities.
 
-**Step 4: association between age effects, cognition effects, and tract properties**
+### Individual-level analysis — cognition effects (Figure 8)
 
-➡️ **Local path:** `analysis/7_individual_level`
+This section runs individual-level **cognition** GAMs, then tests associations between tract-wise cognition partial R² and tract functional properties (Gini coefficient, S–A range). This is done:
 
-Code: 
+* for two datasets: the Philadelphia Neurodevelopmental Cohort (PNC) and the Human Connectome Project Young Adult sample (HCP-YA)
+* for two DWI metrics: Fractional Anisotropy (FA) and Mean Diffusivity (MD)
 
-- `partial_r2_pnc_plotting.py` - loads and plot partial R² results from individual-level GAM analyses. Plots correlation showing the relationship between tract properties (Gini coefficient and S-A range) and partial R² from age and cognition GAMs.
+**Step 1: pull data on CUBIC**
+
+This first step happens on CUBIC: 
+➡️ **CUBIC path:** `/cbic/projects/tractmaps/code`
+
+This code is also available in the repository, under `code/get_data`. First, pulling the data is done with scripts in the CUBIC project directory. Run these in order, selecting the scripts corresponding to each dataset (PNC, HCPYA). Steps for pulling data are the same as above (see age analysis).
+
+**Step 2: create sample and run cognition GAMs**
+
+➡️ Local path: **`analysis/7_individual_level/<dataset>`**
+
+- `create_group_level_<dataset>.R` - saves a group csv for each microstructure measure in `data/<dataset>/derivatives/cleaned`. These will be used for final sample selection below. Note that it will take a while to load all subjects’ files.
+- `sample_creation_<dataset>.py` - applies data exclusion. This outputs a final sample csv in `data/<dataset>/derivatives/final_sample`. This will be used in downstream analyses.
+- `run_gams_<dataset>.R` - runs GAMs on each tract to determine the relationship between tract microstructure and cognition. This outputs partial R² and FDR-corrected p-values in: `results/individual_level/<dataset>`.
+- `func_GAM_tractmaps.R` - is called by `scpt_GAM_tractmaps_<dataset>.R` to fit the GAMs.
+
+**Step 3: cognition partial R² vs tract properties**
+
+➡️ **`analysis/7_individual_level`**
+
+- `run_partial_r2_cognition_effects.py` — driver for combining PNC and HCP-YA cognition-effect tables versus tract properties (writes combined tables and figures under `results/individual_level/cognition_effects/`).
+- `test_partial_r2_tract_properties.py` — is called by `run_partial_r2_cognition_effects.py` to run correlations and permutation tests; also contains plotting utilities.
 
 Et voilà! 😊
 
