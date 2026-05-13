@@ -151,11 +151,6 @@ gam.fit.linear <- function(measure, dataset, region, smooth_var,
   modelformula <- as.formula(sprintf("%s ~ %s + s(%s, k = %s, fx = %s) + %s", 
                                      region, linear_var, smooth_var, knots, 
                                      set_fx, covariates))
-  # modelformula <- as.formula(sprintf("%s ~ s(%s, k = %s, fx = %s) + 
-  #                                    s(%s, k = %s, fx = %s) + ti(%s, %s) + %s", 
-  #                                    region, linear_var, knots, set_fx, 
-  #                                    smooth_var, knots, set_fx, linear_var, 
-  #                                    smooth_var, covariates))
   gam.model <- gam(modelformula, method = "REML", data = gam.data)
   gam.results <- summary(gam.model)
 
@@ -339,5 +334,225 @@ gam.linear.predict <- function(measure, atlas, dataset, region, smooth_var,
 
   linear.fit <- list(parcel, peak[[1]], predicted.linear)
   return(linear.fit)
+}
+
+## Function to run a GAM analysis for a single metric (FA, MD, ICVF) and dataset (e.g. PNC, HBN, HCP-YA).
+## Uses gam.fit.smooth (age) or gam.fit.linear (cognition), applies FDR, writes partial R2 stats.
+run_gam <- function(dataset,
+                    gamtype = c("age", "cognition"), # run a smooth GAM (age) or a linear GAM (cognition)
+                    metric = "FA", # "FA", "MD", "ICVF"
+                    cognition_var = NULL, # cognition variable, if running cognition GAM
+                    harmonized = FALSE, # TRUE for HBN harmonized CSVs; FALSE for PNC and HCP-YA
+                    root = NULL,
+                    data_path = NULL,
+                    outpath = NULL) {
+  gamtype <- match.arg(gamtype)
+  metric_lc <- tolower(as.character(metric)[1L])
+
+  # ------------------------------------------------------------
+  # Check requirements
+  # ------------------------------------------------------------
+
+  if (!metric_lc %in% c("fa", "md", "icvf")) {
+    stop("metric must be one of FA, MD, ICVF (or fa, md, icvf).")
+  }
+  if (gamtype == "cognition") {
+    if (is.null(cognition_var) || !nzchar(as.character(cognition_var)[1L])) {
+      stop("cognition_var is required when gamtype is 'cognition' (column name in the sample CSV).")
+    }
+    linear_var <- as.character(cognition_var)[1L]
+  }
+
+  # ------------------------------------------------------------
+  # Set up inputs and outputs
+  # ------------------------------------------------------------
+
+  if (is.null(data_path)) {
+    if (is.null(root)) {
+      stop("Provide root (for default paths) or data_path.")
+    }
+    data_path <- switch(
+      tolower(as.character(dataset)[1L]),
+      pnc = file.path(root, "data", "PNC", "derivatives", "final_sample"),
+      hbn = file.path(root, "data", "HBN", "derivatives", "final_sample"),
+      hcpya = file.path(root, "data", "HCPYA", "derivatives", "final_sample"),
+      stop("Unknown dataset: pass data_path explicitly.")
+    )
+  }
+  if (is.null(outpath)) {
+    if (is.null(root)) {
+      stop("Provide root (for default results path) or outpath.")
+    }
+    outpath <- file.path(
+      root,
+      "results",
+      "individual_level",
+      tolower(as.character(dataset)[1L])
+    )
+  }
+
+
+  # Inputs for age GAMs (smooth GAM) or cognition GAMs (linear GAM)
+  if (gamtype == "age") {
+    dtype <- sprintf("%s_final_sample_%s", tolower(as.character(dataset)[1L]), metric_lc)
+  } else { # cognition
+    dtype <- sprintf(
+      "%s_final_cognition_sample_%s",
+      tolower(as.character(dataset)[1L]),
+      metric_lc
+    )
+  }
+
+  # Use harmonized or original sample CSV
+  path_in <- file.path(
+    data_path,
+    if (isTRUE(harmonized)) sprintf("%s_harmonized.csv", dtype) else sprintf("%s.csv", dtype)
+  )
+
+  # Age GAM inputs
+  smooth_var <- "age"
+
+  metric.all <- utils::read.csv(path_in, stringsAsFactors = FALSE)
+  metric.all$dataset <- as.factor(as.character(dataset)[1L])
+  metric.all$sex <- as.factor(metric.all$sex)
+
+  covars <- if ("mean_fd" %in% names(metric.all)) {
+    "sex + mean_fd"
+  } else {
+    "sex"
+  }
+  message("GAM covariates: ", covars)
+
+  # Set global object metric.all for gam.fit.* functions
+  had_metric_all <- exists("metric.all", envir = .GlobalEnv, inherits = FALSE)
+  old_metric_all <- if (had_metric_all) get("metric.all", envir = .GlobalEnv) else NULL
+  assign("metric.all", metric.all, envir = .GlobalEnv)
+  on.exit(
+    {
+      if (had_metric_all) {
+        assign("metric.all", old_metric_all, envir = .GlobalEnv)
+      } else {
+        rm("metric.all", envir = .GlobalEnv)
+      }
+    },
+    add = TRUE
+  )
+
+  # Select tract columns
+  tract_labels <- data.frame(
+    tract = names(metric.all)[
+      vapply(names(metric.all), function(x) {
+        grepl("Association|Projection", x)
+      }, logical(1L))
+    ],
+    stringsAsFactors = FALSE
+  )
+
+  n_tracts <- nrow(tract_labels)
+  if (n_tracts == 0L) {
+    stop(
+      "No tract columns found (expected column names containing Association or Projection)."
+    )
+  }
+
+  # ------------------------------------------------------------
+  # Fit GAMs
+  # ------------------------------------------------------------
+
+  # Run GAM age model
+  if (gamtype == "age") {
+    gam.variable.tract <- matrix(data = NA, nrow = n_tracts, ncol = 10)
+    for (row in seq_len(n_tracts)) {
+      tract <- tract_labels$tract[row]
+      GAM.RESULTS <- gam.fit.smooth(
+        measure = "metric",
+        dataset = "all",
+        region = tract,
+        smooth_var = smooth_var,
+        covariates = covars,
+        knots = 3,
+        set_fx = FALSE,
+        stats_only = FALSE
+      )
+      gam.variable.tract[row, ] <- GAM.RESULTS
+    }
+
+    gam.variable.tract <- as.data.frame(gam.variable.tract)
+    colnames(gam.variable.tract) <- c(
+      "tract", "GAM.variable.Fvalue", "GAM.variable.pvalue",
+      "GAM.variable.partialR2", "Anova.variable.pvalue",
+      "age.onsetchange", "age.peakchange",
+      "minage.decrease", "maxage.increase", "age.maturation"
+    )
+    cols <- c(2:10)
+    gam.variable.tract[, cols] <- apply(
+      gam.variable.tract[, cols], 2,
+      function(x) as.numeric(as.character(x))
+    )
+
+  # Run GAM cognition model
+  } else {
+    gam.variable.tract <- matrix(data = NA, nrow = n_tracts, ncol = 5)
+    for (row in seq_len(n_tracts)) {
+      tract <- tract_labels$tract[row]
+      GAM.RESULTS <- gam.fit.linear(
+        measure = "metric",
+        dataset = "all",
+        region = tract,
+        smooth_var = smooth_var,
+        linear_var = linear_var,
+        covariates = covars,
+        knots = 3,
+        set_fx = FALSE
+      )
+      gam.variable.tract[row, ] <- GAM.RESULTS
+    }
+
+    gam.variable.tract <- as.data.frame(gam.variable.tract)
+    colnames(gam.variable.tract) <- c(
+      "tract", "GAM.variable.Fvalue", "GAM.variable.pvalue",
+      "GAM.variable.partialR2", "Anova.variable.pvalue"
+    )
+    cols <- c(2:5)
+    gam.variable.tract[, cols] <- apply(
+      gam.variable.tract[, cols], 2,
+      function(x) as.numeric(as.character(x))
+    )
+  }
+
+  # ------------------------------------------------------------
+  # FDR correction
+  # ------------------------------------------------------------
+
+  csvR2 <- data.frame(gam.variable.tract$tract)
+  csvR2$partialR2 <- gam.variable.tract$GAM.variable.partialR2
+
+  # GAM p-values
+  pvalues <- gam.variable.tract$GAM.variable.pvalue
+  GAMpvaluesfdrs <- p.adjust(pvalues, method = "BH")
+
+  # Anova p-values and FDR correction
+  pvalues <- gam.variable.tract$Anova.variable.pvalue
+  Anovapvaluesfdrs <- p.adjust(pvalues, method = "BH")
+
+  csvR2$anovaPvaluefdr <- Anovapvaluesfdrs
+  csvR2$gamPvaluefdr <- GAMpvaluesfdrs
+
+  # ------------------------------------------------------------
+  # Save results
+  # ------------------------------------------------------------
+
+  gamtype_save <- if (gamtype == "cognition") linear_var else gamtype
+  outputPath <- file.path(
+    outpath,
+    sprintf("%s_%s_partialR2_stats.csv", dtype, gamtype_save)
+  )
+  if (!dir.exists(outpath)) {
+    dir.create(outpath, recursive = TRUE, showWarnings = FALSE)
+  }
+  utils::write.csv(csvR2, outputPath, row.names = FALSE)
+
+  print(paste("Partial R2 stats saved to:", outputPath))
+  invisible(outputPath)
 }
 

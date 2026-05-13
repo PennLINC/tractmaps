@@ -1,11 +1,10 @@
 # ------------------------------------------------------------------------------------------------
-# --- Sample Creation for Individual-level Analysis ---
+# --- Sample Creation for PNC Individual-level Analysis ---
 # ------------------------------------------------------------------------------------------------
 
-# Script to create a final sample of participants with complete data for analysis. Requires first running group_level_tract_scalars_pnc.R 
-# and group_level_qc_measures_pnc.R to create the group-level measures.
-# Inputs: PNC demographics, health data, T1 QA data, diffusion QC data, and participant lists
-# Outputs: Final sample of participants with complete data for analysis
+# Run after create_group_level_pnc.R.
+# Creates a final sample csv in data/PNC/derivatives/final_sample.
+# Inputs: PNC demographics, health data, T1 QA data, diffusion QC data, participant lists, and tract scalar measures
 # ------------------------------------------------------------------------------------------------
 
 import os
@@ -16,8 +15,8 @@ import pandas as pd
 # ------------------------------------------------------------------------------------------------
 
 cubic_root = '/Volumes/tractmaps/data/PNC/behavioral_data'
-root = '/Users/joelleba/PennLINC/tractmaps'
-data_root = f'{root}/data/derivatives/individual_level_pnc'
+root = '/Volumes/tractmaps'
+data_root = f'{root}/data/PNC/derivatives'
 output_dir = f'{data_root}/final_sample'
 
 # Create results directory if it doesn't yet exist
@@ -57,9 +56,9 @@ print(f"T1 QA data: N = {len(t1_qa)}") # N = 1601
 dwi_qc = pd.read_csv(f'{cubic_root}/PNC_DWI_QCmetrics.csv')
 print(f"Diffusion QC data: N = {len(dwi_qc)}") # N = 1406
 
-# Scalar measures of tracts
-# Script to great a group-level csv: group_level_tract_scalars.R
+# Scalar measures of tracts (group-level; column prefixes fa_* / md_*)
 tracts_fa = pd.read_csv(f'{data_root}/cleaned/pnc_tracts_fa.csv')
+tracts_md = pd.read_csv(f'{data_root}/cleaned/pnc_tracts_md.csv')
 
 # Cognition data
 cognition = pd.read_csv(f'{cubic_root}/n1601_cnb_factor_scores_tymoore_20151006.csv')
@@ -223,21 +222,26 @@ print(f"Final sample with cognition data: N = {n_after_cognition}") # N = 1142
 print(f"Number of participants excluded due to missing cognition data: {n_before_cognition - n_after_cognition}") # N = 3
 
 # ------------------------------------------------------------------------------------------------
-# --- add tract scalar measures ---
+# --- add tract scalar measures (FA and MD) ---
 # ------------------------------------------------------------------------------------------------
 
-# rename subject_id to rbcid in tracts_fa and tracts_md
+# rename subject_id to rbcid
 tracts_fa = tracts_fa.rename(columns={'subject_id': 'rbcid'})
+tracts_md = tracts_md.rename(columns={'subject_id': 'rbcid'})
 
-# Merge tract scalar measures with demographics
+# Merge FA tract measures
 final_sample_fa = final_sample.merge(tracts_fa, on='rbcid', how='left')
-
-# Merge tract scalar measures with cognition
 final_sample_fa_cognition = final_cognition_sample.merge(tracts_fa, on='rbcid', how='left')
 
-# Count participants before and after tract scalar measures merge
-print(f"Final sample: N = {len(final_sample_fa)}") # N = 1145
-print(f"Final cognition sample: N = {len(final_sample_fa_cognition)}") # N = 1142
+# Merge MD tract measures
+final_sample_md = final_sample.merge(tracts_md, on='rbcid', how='left')
+final_sample_md_cognition = final_cognition_sample.merge(tracts_md, on='rbcid', how='left')
+
+# Count participants after tract merges (N matches FA/MD; tract columns differ)
+print(f"Final sample (FA): N = {len(final_sample_fa)}")  # N = 1145
+print(f"Final sample (MD): N = {len(final_sample_md)}")
+print(f"Final cognition sample (FA): N = {len(final_sample_fa_cognition)}")  # N = 1142
+print(f"Final cognition sample (MD): N = {len(final_sample_md_cognition)}")
 
 # ------------------------------------------------------------------------------------------------
 # --- descriptive statistics for final sample ---
@@ -260,12 +264,17 @@ print(f"SD t1 neighbor correlation: {final_sample_fa['t1_neighbor_corr'].std():.
 
 # Save full sample
 final_sample_fa.to_csv(f'{output_dir}/pnc_final_sample_fa.csv', index=False)
-print(f"\nFinal full sample created: N = {len(final_sample_fa)}") # N = 1145
+print(f"\nFinal full sample (FA) created: N = {len(final_sample_fa)}")  # N = 1145
 print(f"Files saved to: {output_dir}")
 
 # Save cognition sample
 final_sample_fa_cognition.to_csv(f'{output_dir}/pnc_final_cognition_sample_fa.csv', index=False)
-print(f"\nFinal cognition sample created: N = {len(final_sample_fa_cognition)}") # N = 1142
+print(f"\nFinal cognition sample (FA) created: N = {len(final_sample_fa_cognition)}")  # N = 1142
 print(f"Files saved to: {output_dir}")
 
+# Save full and cognition samples with MD tract columns
+final_sample_md.to_csv(f'{output_dir}/pnc_final_sample_md.csv', index=False)
+print(f"\nFinal full sample (MD) created: N = {len(final_sample_md)}")
+final_sample_md_cognition.to_csv(f'{output_dir}/pnc_final_cognition_sample_md.csv', index=False)
+print(f"Final cognition sample (MD) created: N = {len(final_sample_md_cognition)}")
 print(f"Files saved to: {output_dir}")

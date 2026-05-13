@@ -31,6 +31,7 @@ def _apply_rc(
         # Fonts / sizes
         "font.family": font_family,
         "font.sans-serif": font_list,
+        "font.size": base_pt,
         "axes.titlesize": title_pt,
         "axes.labelsize": label_pt,
         "xtick.labelsize": base_pt,
@@ -219,6 +220,9 @@ def setup_figure(
     return fig, axes
 
 
-def save_figure(fig: mpl.figure.Figure, path: str) -> None:
-    # No bbox_inches='tight' here; page size remains exactly as requested
-    fig.savefig(path)
+def save_figure(fig: mpl.figure.Figure, path: str, *, dpi: int | None = None) -> None:
+    """Save figure at the current figsize. No bbox_inches='tight'. Optional dpi for raster (e.g. PNG)."""
+    if dpi is not None:
+        fig.savefig(path, dpi=dpi)
+    else:
+        fig.savefig(path)
