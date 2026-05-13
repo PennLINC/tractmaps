@@ -298,7 +298,7 @@ This code is also available in the repository, under `code/get_data`. First, pul
     bash run_unzip_<dataset>_cubic.sh
     ```
 
--`check_subjects_<dataset>.sh`  - finds which subjects where in the original `<dataset>_subject_list.txt` (aka, they have a qsirecon zip file), but don’t have a tsv output file. This should be 0 (all were unzipped correctly).
+- `check_subjects_<dataset>.sh` — finds which subjects were in the original `<dataset>_subject_list.txt` (i.e., they have a qsirecon zip file) but don’t have a TSV output file. This should be 0 (all were unzipped correctly).
 
 **Step 2: create sample and run age GAMs**
 
