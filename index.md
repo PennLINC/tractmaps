@@ -25,7 +25,8 @@ The entire analytic workflow implemented in this project is described in the fol
     - [Functional decoding (Figure 4)](#functional-decoding-figure-4)
     - [Tract functional diversity (Figure 5)](#tract-functional-diversity-figure-5)
     - [Biological cortical similarity (Figure 6)](#biological-cortical-similarity-figure-6)
-    - [Individual-level analysis (Figure 7)](#individual-level-analysis-figure-7)
+    - [Individual-level analysis — age effects (Figure 7)](#individual-level-analysis-age-effects-figure-7)
+    - [Individual-level analysis — cognition effects (Figure 8)](#individual-level-analysis-cognition-effects-figure-8)
   - [A note on utilities](#a-note-on-utilities)
 
 # Project information
@@ -278,6 +279,7 @@ Code:
 - `sa_range_cortical_similarity_rewiring_null.py` - significance testing for the correlation between tract mean cortical similarity and Gini coefficients using tract rewiring (takes some time).
 
 ### Individual-level analysis — age effects (Figure 7)
+{: #individual-level-analysis-age-effects-figure-7}
 
 This section runs individual-level **age** GAMs, then tests associations between tract-wise age partial R² and tract functional properties (Gini coefficient, S–A range). This is done:
 
@@ -318,6 +320,7 @@ This code is also available in the repository, under `code/get_data`. First, pul
 - `test_partial_r2_tract_properties.py` — is called by `run_partial_r2_age_effects.py` to run correlations and permutation tests; also contains plotting utilities.
 
 ### Individual-level analysis — cognition effects (Figure 8)
+{: #individual-level-analysis-cognition-effects-figure-8}
 
 This section runs individual-level **cognition** GAMs, then tests associations between tract-wise cognition partial R² and tract functional properties (Gini coefficient, S–A range). This is done:
 
